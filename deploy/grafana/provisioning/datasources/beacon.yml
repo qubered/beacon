@@ -1,0 +1,21 @@
+# The metrics endpoint is an integration surface; the database remains the system
+# of record (spec §12).
+apiVersion: 1
+datasources:
+  - name: Beacon
+    type: prometheus
+    access: proxy
+    url: http://core:9090
+    isDefault: true
+
+  # A read-only database datasource answers the historical and reporting queries
+  # a metrics store cannot. It is granted on the ROLLUP VIEWS ONLY — never table
+  # access, or the read-only role routes straight around the UI's permission
+  # model and can read run captures and encrypted credential rows (spec §12).
+  # Enabled from M9.
+  #
+  # - name: Beacon History
+  #   type: postgres
+  #   url: postgres:5432
+  #   user: beacon_readonly
+  #   jsonData: { database: beacon, sslmode: disable }

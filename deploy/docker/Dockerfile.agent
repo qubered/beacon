@@ -1,0 +1,21 @@
+# Agent: one image, one deployable, with the ICMP helper bundled inside it rather
+# than as a separate container (spec §7.6).
+#
+# Cross-compiles for the rack-SBC case: build with --platform linux/arm64.
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum* ./
+RUN go mod download
+COPY . .
+ARG VERSION=0.0.0-dev
+ARG COMMIT=none
+RUN CGO_ENABLED=0 go build -trimpath \
+    -ldflags "-s -w -X github.com/qubered/beacon/internal/buildinfo.Version=${VERSION} -X github.com/qubered/beacon/internal/buildinfo.Commit=${COMMIT}" \
+    -o /out/beacon-agent ./cmd/beacon-agent
+
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 beacon
+COPY --from=build /out/beacon-agent /usr/local/bin/
+# Zero listening ports. The agent dials out (D11).
+USER beacon
+ENTRYPOINT ["beacon-agent"]

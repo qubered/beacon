@@ -1,0 +1,67 @@
+# Development stack: Postgres, Core (with its local agent), and Grafana.
+#
+# The monitoring profile stands the Grafana side up pre-wired, which alone
+# satisfies "exports to Grafana" (spec §12).
+name: beacon
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: beacon
+      POSTGRES_PASSWORD: beacon
+      POSTGRES_DB: beacon
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beacon"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  core:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.core
+    environment:
+      BEACON_DATABASE_URL: postgres://beacon:beacon@postgres:5432/beacon?sslmode=disable
+      # Back this up SEPARATELY from the database, and never alongside it.
+      # See docs/security.md. This value is for local development only.
+      BEACON_MASTER_KEY: dev-only-not-a-real-key
+    ports:
+      - "8080:8080"   # UI and API
+      - "8081:8081"   # agent link (agents dial in; Core never dials out to them)
+      - "9090:9090"   # prometheus exposition
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # An agent in a different segment. In production this is one per VLAN, on a
+  # host with an interface in that segment, or a small board in the rack.
+  agent:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.agent
+    environment:
+      BEACON_CORE_ADDR: core:8081
+      BEACON_ENROLMENT_TOKEN: ""   # created in the UI; single use, short-lived
+    # ICMP needs raw sockets. The helper is bundled in the image rather than
+    # shipped as a second container (spec §7.6).
+    cap_add: ["NET_RAW"]
+    depends_on: [core]
+    profiles: ["fleet"]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports: ["3000:3000"]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [core]
+    profiles: ["monitoring"]
+
+volumes:
+  pgdata:

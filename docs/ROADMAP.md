@@ -63,7 +63,7 @@ migrated database. CI is green and enforces the vendor-name rule.
 
 ---
 
-## M1 — The flow spine
+## M1 — The flow spine ✅ shipped
 
 **Goal:** a flow can be defined, validated and executed against recorded bytes,
 with every node's input and output captured. No network yet.
@@ -93,6 +93,17 @@ slow node terminates at 200ms. A run that reaches no `Emit Status` yields
 **Risk:** the branch-join rule and the error-port semantics are the two places
 where a plausible implementation is subtly wrong and the symptom is a hang in
 production. Write the tests first.
+
+**What actually happened:** the risk called it correctly. Building this surfaced
+two real bugs that no amount of reading the spec first would have caught —
+`capture.Recorder` didn't structurally satisfy `runtime.Capturer` because
+`Inputs`/`Outputs` are named types, not aliases, and it compiled cleanly right up
+until something tried to use it that way; and the unconnected-error-port path
+aborted the run without cascading the skip through the failing node's normal
+outputs, so a downstream node ended up with no capture entry at all instead of
+one marked skipped. Both were caught by the first test that wired two real
+pieces together rather than a fake standing in for one side — worth remembering
+for M2 through M4, which have far more seams than M1 did.
 
 ---
 

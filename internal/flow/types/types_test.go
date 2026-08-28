@@ -12,7 +12,7 @@ func TestCheck(t *testing.T) {
 		{"exact bytes", Bytes(), Bytes(), true, ""},
 		// I1: transports emit bytes and decoding is always explicit. This refusal,
 		// with its suggestion, is the single most common thing an author will see.
-		{"bytes into string", Bytes(), String(), false, "parse.decode"},
+		{"bytes into string", Bytes(), String(), false, "byteops.decode"},
 		{"string into number", String(), Number(), false, "parse.coerce"},
 		{"number into duration", Number(), Duration(), false, "transform.unit_convert"},
 		{"number into status", Number(), Status(), false, "emit.threshold"},

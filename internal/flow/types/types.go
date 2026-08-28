@@ -103,11 +103,11 @@ func no(reason, suggest string) Verdict {
 
 // bridges maps a refused (source, destination) kind pair to the node that fixes it.
 var bridges = map[[2]Kind]struct{ node, how string }{
-	{KindBytes, KindString}:     {"parse.decode", "insert Decode (utf-8) to connect bytes → string"},
-	{KindBytes, KindJSON}:       {"parse.parse", "insert Decode then Parse (json) to connect bytes → json"},
+	{KindBytes, KindString}:     {"byteops.decode", "insert Decode (utf-8) to connect bytes → string"},
+	{KindBytes, KindJSON}:       {"byteops.decode", "insert Decode then Parse (json) to connect bytes → json"},
 	{KindBytes, KindNumber}:     {"byteops.slice", "insert Slice then Coerce, or Bit Field, to read a number out of bytes"},
 	{KindBytes, KindInt}:        {"byteops.slice", "insert Slice with an integer width and endianness to read an int out of bytes"},
-	{KindString, KindBytes}:     {"parse.encode", "insert Encode (utf-8) to connect string → bytes"},
+	{KindString, KindBytes}:     {"byteops.encode", "insert Encode (utf-8) to connect string → bytes"},
 	{KindString, KindNumber}:    {"parse.coerce", "insert Coerce (number) — conversion is never implicit"},
 	{KindString, KindInt}:       {"parse.coerce", "insert Coerce (int) — conversion is never implicit"},
 	{KindString, KindBool}:      {"parse.coerce", "insert Coerce (bool) — conversion is never implicit"},

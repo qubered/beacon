@@ -12,7 +12,7 @@ import (
 func testPorts(nodeType string, port PortName, output bool) (types.Type, bool) {
 	table := map[string]map[PortName]types.Type{
 		"transport.tcp_request": {"out": types.Bytes()},
-		"parse.decode":          {"in": types.Bytes(), "out": types.String()},
+		"byteops.decode":        {"in": types.Bytes(), "out": types.String()},
 		"control.if":            {"in": types.Bool(), "true": types.Void(), "false": types.Void()},
 		"emit.emit_status":      {"in": types.Status()},
 		"control.collect":       {"in": types.Any(), "out": types.List(types.Any())},
@@ -38,7 +38,7 @@ func TestValidate_RefusesTypeMismatch(t *testing.T) {
 
 func TestValidate_AllowsGoodEdge(t *testing.T) {
 	g := &Graph{
-		Nodes: []Node{{ID: "a", Type: "transport.tcp_request"}, {ID: "b", Type: "parse.decode"}},
+		Nodes: []Node{{ID: "a", Type: "transport.tcp_request"}, {ID: "b", Type: "byteops.decode"}},
 		Edges: []Edge{{From: Endpoint{"a", "out"}, To: Endpoint{"b", "in"}}},
 	}
 	if err := g.Validate(testPorts); err != nil {

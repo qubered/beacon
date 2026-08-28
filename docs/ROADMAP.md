@@ -81,7 +81,7 @@ Ships:
 - `internal/engine/capture`: per-node input/output, truncation flags, masking by
   value scan.
 - First nodes, chosen to exercise the engine rather than to be useful:
-  `parse.decode`, `parse.regex_extract`, `emit.assert`, `emit.emit_status`,
+  `byteops.decode`, `parse.regex_extract`, `emit.assert`, `emit.emit_status`,
   `control.if`.
 - `beaconctl flow run --fixture` executes a flow against a recorded byte stream.
 

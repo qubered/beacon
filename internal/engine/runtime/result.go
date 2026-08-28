@@ -66,7 +66,11 @@ type UnhandledFailure struct {
 }
 
 func (e *UnhandledFailure) Error() string {
-	return "unhandled error at " + string(e.Node) + ": " + e.Failure.Error()
+	// Failure.Error() already includes the node name when Failure.Node is
+	// set, which it always is by the time this wraps it (toFailure fills it
+	// in) — prefixing it again here read as "unhandled error at check: check:
+	// battery run time critically low (assertion)".
+	return "unhandled error: " + e.Failure.Error()
 }
 
 func (e *UnhandledFailure) Unwrap() error { return e.Failure }

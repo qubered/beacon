@@ -256,7 +256,7 @@ func (r *run) handleResult(res nodeExecResult) {
 			r.abort(&UnhandledFailure{Node: id, Failure: fail})
 			return
 		}
-		errFrame := frame.Frame{Type: types.Error(), Value: fail, ProducedAt: res.ended}
+		errFrame := frame.Frame{Type: types.Error(), Value: fail, ProducedAt: res.ended, Origin: frame.Origin{NodeID: string(id), Port: string(errorPort)}}
 		for _, e := range errEdges {
 			e.state = edgeDelivered
 			e.frame = errFrame
@@ -267,6 +267,19 @@ func (r *run) handleResult(res nodeExecResult) {
 			r.skipEdgesFrom(id, port)
 		}
 		return
+	}
+
+	// Stamp Origin and ProducedAt here, centrally, so a node can never mis-stamp
+	// (or forget to stamp) where its own output came from — Execute has no
+	// access to its own node ID for exactly this reason.
+	for port, f := range res.out {
+		if f.Origin == (frame.Origin{}) {
+			f.Origin = frame.Origin{NodeID: string(id), Port: string(port)}
+		}
+		if f.ProducedAt.IsZero() {
+			f.ProducedAt = res.ended
+		}
+		res.out[port] = f
 	}
 
 	r.finish(id, stDone)

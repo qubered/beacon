@@ -7,6 +7,12 @@ import (
 )
 
 // Origin identifies where a frame came from, for the run inspector.
+//
+// Nodes never set this themselves — Executable.Execute has no access to its
+// own node ID, deliberately, since a node has no business knowing where it
+// sits in the graph. internal/engine/runtime stamps Origin and ProducedAt on
+// every frame a node returns, right after Execute returns, which is also the
+// one place that can't get it wrong.
 type Origin struct {
 	NodeID string
 	Port   string
@@ -37,13 +43,15 @@ type Frame struct {
 	Sealed bool
 }
 
-// Derive produces a new frame from this one, carrying the seal forward.
+// Derive produces a new frame from this one, carrying the seal forward. Origin
+// and ProducedAt are left zero — internal/engine/runtime stamps both once the
+// frame reaches it, so a node need not and cannot mis-stamp them.
 //
 // Use this for every node output computed from an input. A node that constructs
 // a Frame literal from sealed input silently launders a secret into a capture,
 // which is exactly the bug invariant I4 exists to prevent.
-func (f Frame) Derive(t types.Type, v any, origin Origin, at time.Time) Frame {
-	return Frame{Type: t, Value: v, Origin: origin, ProducedAt: at, Sealed: f.Sealed}
+func (f Frame) Derive(t types.Type, v any) Frame {
+	return Frame{Type: t, Value: v, Sealed: f.Sealed}
 }
 
 // Unseal marks a frame as no longer secret-derived. It is legal only after a

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/qubered/beacon/internal/engine/runtime"
 	"github.com/qubered/beacon/internal/flow/types"
 )
 
@@ -65,6 +66,12 @@ type Descriptor struct {
 
 	// SessionCapable marks a node usable as a session-mode frame source (spec §9).
 	SessionCapable bool
+
+	// New constructs an Executable for one graph node of this type. It is the
+	// execution half of what registering a descriptor means — Outputs/Inputs/
+	// Terminal above are the metadata half, consumed by graph validation and
+	// capability declaration without needing this at all.
+	New runtime.Factory
 }
 
 // Registry is the node catalogue. An agent's declared capability set is derived

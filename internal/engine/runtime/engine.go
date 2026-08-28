@@ -251,8 +251,14 @@ func (r *run) handleResult(res nodeExecResult) {
 
 		errEdges := r.outByPort[id][errorPort]
 		if len(errEdges) == 0 {
-			// Unconnected error port: the run fails outright, with full
-			// context captured (spec §6.2).
+			// Unconnected error port: the run fails outright. Still cascade
+			// the skip through the failing node's normal outputs first, so
+			// "full context captured" (spec §6.2) means what it says — the
+			// downstream node that never got to run shows up in the capture
+			// as skipped, not as an entry that silently never appeared.
+			for _, port := range r.meta.Outputs(nt) {
+				r.skipEdgesFrom(id, port)
+			}
 			r.abort(&UnhandledFailure{Node: id, Failure: fail})
 			return
 		}

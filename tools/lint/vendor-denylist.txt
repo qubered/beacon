@@ -1,0 +1,10 @@
+# Vendor names that must not appear in the codebase (design principle 1).
+#
+# This file is the one sanctioned place a vendor name may appear in the tree, and
+# it is excluded from its own scan. If a vendor string shows up anywhere outside
+# packs/ or a test fixture, the abstraction has failed: the answer is
+# configuration — a lookup table, a scale factor, a framing strategy — not a
+# branch on a vendor.
+#
+# One case-insensitive substring per line. Blank lines and # comments ignored.
+# Add names as Packs are authored for them.

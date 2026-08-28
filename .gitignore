@@ -1,0 +1,32 @@
+# Build output
+/bin/
+/dist/
+*.test
+*.out
+
+# Local environment
+.env
+.env.local
+*.local.yaml
+
+# Agent local state — spool, certificates, cached flow versions
+/var/
+*.spool
+
+# Secrets. Never commit a key; see docs/security.md
+*.pem
+*.key
+!deploy/**/testdata/*.pem
+
+# Node
+node_modules/
+web/dist/
+.pnpm-store/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# TypeScript incremental build state
+*.tsbuildinfo

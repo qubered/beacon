@@ -7,4 +7,6 @@
 // Resolve, then pin. Check the allowlist against the resolved address and connect to that address explicitly; never re-resolve between check and connect or DNS rebinding walks straight through. A redirect to a denied host is a hard failure, not a follow.
 //
 // Write-capable nodes and multicast are likewise locally enabled, never remotely enabled. Every denial is logged as a security event.
+//
+// Policy.AllowLoopback is the one sanctioned relaxation, for test/devsim in CI and for a simulator running on the agent host. It stands down only the loopback entries — link-local and metadata addresses stay denied — and it deliberately has no wire representation, so a policy Core proposes cannot carry it. Keep it that way when internal/proto learns to deserialise a Policy in M4.
 package egress

@@ -107,7 +107,7 @@ for M2 through M4, which have far more seams than M1 did.
 
 ---
 
-## M2 — Framing, transports, and the outward-facing controls
+## M2 — Framing, transports, and the outward-facing controls ✅ shipped
 
 **Goal:** real bytes over real sockets, with the safety controls in place before
 anything can send.
@@ -138,6 +138,53 @@ end from `beaconctl`.
 **Risk:** egress normalisation. `::ffff:127.0.0.1`, `0177.0.0.1`, and a CNAME to
 a metadata address are all the same bypass wearing different hats. Canonicalise
 once, in one function, and test the ugly forms explicitly.
+
+**What actually happened:** the normalisation risk was largely handled by
+picking the right tools — `netip`'s strict parser rejects `0177.0.0.1` and
+`2130706433` outright, and one `Canonicalize` call unmapping `::ffff:` forms
+before any range check closed the rest. Two things did surface that reading the
+spec first would not have caught.
+
+The first was the HTTP client. Checking the URL's host and then handing the
+*hostname* to `http.Transport` re-resolves inside the transport's own dial,
+which reopens rebinding after the check has passed — the pin has to happen
+inside `DialContext`, not before `client.Do`. Anything that resolves on its own
+behalf has this shape, so SSH, MQTT and the SNMP client in M8 each need the same
+treatment rather than inheriting it.
+
+The second was a genuine tension the spec does not resolve: the hard denylist
+blocks loopback, which is correct in production and makes `test/devsim`
+unreachable in CI — and the acceptance scenarios in M7 and M8 are all built
+against it. Weakening the denylist would have been the wrong answer, so
+loopback is stood down by `Policy.AllowLoopback`, a local flag with **no wire
+representation**, deliberately so a policy Core proposes cannot carry it. When
+`internal/proto` learns to deserialise a Policy in M4, keeping that field
+un-serialisable is load-bearing for I7, not an oversight to tidy up.
+
+A review caught two defects the tests had missed, both worth remembering.
+
+A regex read-until pattern that can match the empty string — `.*`, `\d*`, and
+anything else with a leading `*` or `?` quantifier — matched **before the first
+read**, so the read returned an empty frame having never touched the socket. A
+dead device and an empty response became indistinguishable, which is precisely
+the confusion the error classes exist to prevent. `Validate` now refuses such a
+pattern at edit time, and `Read` carries the same zero-advance backstop `Split`
+already had. The general lesson for M7's `Expect`: the framing engine is asked
+whether it has a complete frame *before* it reads, so any strategy that can be
+satisfied by an empty buffer is a silent-success bug.
+
+The second was in the rate limiter: the concurrency gate was a buffered
+channel, whose capacity is fixed at creation, so *lowering* a device's cap did
+nothing. The limit read as 1 in the configuration and behaved as 4 at the
+device — the worst shape a safety limit can have. It is now a counting
+semaphore that can be resized in both directions. Anything else in M3 that
+looks reconfigurable needs a test that actually reconfigures it.
+
+Also worth carrying forward: the roadmap's M1 note about seams held again. The
+bugs were at boundaries between two real pieces — the framing engine against a
+real socket, the egress check against a real HTTP client — and not in either
+piece tested alone. Note that both defects above were found by review rather
+than by a test, and both were in code that had tests passing over it.
 
 ---
 

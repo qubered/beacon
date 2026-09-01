@@ -18,11 +18,20 @@ func usage() {
 
 Usage:
   beaconctl --version
-  beaconctl flow run --graph <file> [--fixture <file> --root <node-id>] [--timeout <duration>]
+  beaconctl flow run --graph <file> [--fixture <file> --root <node-id>]
+                     [--allow CIDR,proto[,ports]]... [--allow-loopback]
+                     [--timeout <duration>]
 
 flow run executes a flow graph through the real engine and node catalogue.
-Until transports land in M2, a root node's input comes from --fixture instead
-of a wire — see docs/ROADMAP.md milestone M1.
+Bytes reach it either from --fixture, replaying a recorded device response, or
+from a transport node opening a real socket.
+
+Transports are subject to the same egress policy an agent enforces, and it is
+default-deny: without at least one --allow rule every connection is refused.
+
+  --allow 10.0.0.0/8,tcp,1-65535     a subnet, TCP, any port
+  --allow 192.168.1.0/24,icmp        a subnet, ping
+  --allow-loopback                   reach a simulator on this host
 
 Everything else (migrate, enrol, pack lint/sign) is not implemented yet.`)
 }

@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "ping",
+      "type": "transport.icmp_ping",
+      "config": {
+        "host": "127.0.0.1",
+        "count": 3,
+        "interval": 100000000,
+        "timeout": 1000000000
+      }
+    },
+    {
+      "id": "check",
+      "type": "emit.assert",
+      "config": {
+        "rows": [
+          {
+            "field": "loss_percent",
+            "operator": "lt",
+            "value": 50,
+            "severity": "critical",
+            "message": "more than half the echoes were lost"
+          }
+        ]
+      }
+    },
+    {
+      "id": "status",
+      "type": "emit.emit_status",
+      "config": { "reason": "device answered ICMP" }
+    }
+  ],
+  "edges": [
+    { "from": { "node": "ping", "port": "out" }, "to": { "node": "check", "port": "in" } },
+    { "from": { "node": "check", "port": "out" }, "to": { "node": "status", "port": "in" } }
+  ]
+}

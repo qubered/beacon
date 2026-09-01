@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/qubered/beacon/internal/agent/egress"
 	"github.com/qubered/beacon/internal/config"
 	"github.com/qubered/beacon/internal/engine/capture"
 	"github.com/qubered/beacon/internal/engine/frame"
@@ -23,15 +24,17 @@ import (
 	_ "github.com/qubered/beacon/internal/nodes/control"
 	_ "github.com/qubered/beacon/internal/nodes/emit"
 	_ "github.com/qubered/beacon/internal/nodes/parse"
+	_ "github.com/qubered/beacon/internal/nodes/transport"
 )
 
 // runFlowCommand implements `beaconctl flow run`.
 //
-// This is the M1 stand-in for the fixture replay described in spec §14 and
-// the roadmap's M1 exit gate: there is no transport node until M2, so the
-// only way bytes enter a graph today is a literal fixture fed to a named
-// root node — exactly how a Pack's recorded device response will be replayed
-// once fixtures are wired to Packs in M9/M10.
+// Two ways bytes enter a graph. A --fixture feeds recorded bytes to a named
+// root node, which is how a Pack's flows are regression-tested with the gear
+// locked in a venue (decision D27). Or a transport node opens a real socket,
+// in which case --allow rules are required: the run carries an egress policy
+// exactly as an agent's would, and a flow that tries to reach outside it is
+// refused here for the same reason it would be refused in a rack.
 func runFlowCommand(args []string) error {
 	if len(args) == 0 || args[0] != "run" {
 		return fmt.Errorf("usage: beaconctl flow run --graph <file> [--fixture <file> --root <node-id>]")
@@ -41,6 +44,9 @@ func runFlowCommand(args []string) error {
 	fixturePath := fs.String("fixture", "", "path to raw bytes fed to --root's \"in\" port")
 	rootID := fs.String("root", "", "node ID that receives --fixture (required if --fixture is set)")
 	timeout := fs.Duration("timeout", 30*time.Second, "run wall-clock deadline")
+	var allow allowFlag
+	fs.Var(&allow, "allow", "egress allow rule, repeatable: CIDR,proto[,ports] (e.g. 10.0.0.0/8,tcp,1-65535)")
+	allowLoopback := fs.Bool("allow-loopback", false, "permit loopback addresses — for a device simulator on this host, never in production")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -80,7 +86,15 @@ func runFlowCommand(args []string) error {
 	rc := runtime.NewRunContext(fmt.Sprintf("cli-%d", time.Now().UnixNano()), time.Now())
 	rec := capture.NewRecorder(bounds.CapturedFrameSize)
 
-	res := runtime.Run(context.Background(), &g, factory, reg.PortMeta(), bounds, rc, rec)
+	// The dialer rides on the context, which is how a transport node reaches
+	// the egress policy without the engine knowing transports exist and
+	// without the node knowing where it is running.
+	ctx := egress.WithDialer(context.Background(), &egress.Dialer{
+		Policy:  egress.Policy{Name: "beaconctl", Allow: allow, AllowLoopback: *allowLoopback},
+		Auditor: stderrAuditor{w: os.Stderr},
+	})
+
+	res := runtime.Run(ctx, &g, factory, reg.PortMeta(), bounds, rc, rec)
 	printFlowResult(res, rec)
 
 	if res.Err != nil {

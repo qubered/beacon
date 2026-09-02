@@ -28,11 +28,21 @@ jobs:
       - run: go test -race ./...
         env:
           BEACON_TEST_DATABASE_URL: postgres://beacon:beacon@localhost:5432/beacon_test?sslmode=disable
-      - name: Migrations apply cleanly
+      # Against its own database, because the test job above has already
+      # migrated beacon_test — and through beaconctl rather than a psql loop,
+      # so this exercises the migration runner operators actually use (the
+      # ledger, the per-migration transaction, the ordering) instead of only
+      # proving the SQL parses.
+      - name: Migrations apply cleanly from scratch
         run: |
-          for f in migrations/*.sql; do
-            PGPASSWORD=beacon psql -h localhost -U beacon -d beacon_test -v ON_ERROR_STOP=1 -f "$f"
-          done
+          PGPASSWORD=beacon createdb -h localhost -U beacon beacon_migrate
+          go run ./cmd/beaconctl migrate \
+            --database-url "postgres://beacon:beacon@localhost:5432/beacon_migrate?sslmode=disable"
+      - name: Migrations are idempotent
+        run: |
+          go run ./cmd/beaconctl migrate \
+            --database-url "postgres://beacon:beacon@localhost:5432/beacon_migrate?sslmode=disable" \
+            | grep -q 'up to date'
 
   rules:
     runs-on: ubuntu-latest

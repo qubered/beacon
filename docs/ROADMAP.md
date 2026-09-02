@@ -448,11 +448,27 @@ Carried from spec §19. These need a decision, not a default.
    currently confined to the module path, `cmd/` binary names and the docs, so a
    rename stays a find-and-replace. That stops being true once a Pack format
    version and a public API ship — so decide before M9.
-2. **Minimum monitor interval.** A one-second floor is a footgun that will knock
-   over someone's receiver. *Suggested:* a five-second floor, with anything below
-   it an admin-only setting. Needs confirming before M3.
-3. **Whether Grafana or the built-in UI is the venue tech's home screen.** If
+2. **Whether Grafana or the built-in UI is the venue tech's home screen.** If
    Grafana wins in practice, some of M6's dashboard work is wasted effort. Worth
    deciding early — the builder is not in question, only the dashboards around it.
-4. **A CLA**, if relicensing should remain possible. Decide before the first
+3. **A CLA**, if relicensing should remain possible. Decide before the first
    outside contribution, not after.
+
+## Settled since
+
+**Minimum monitor interval: a five-second floor, with anything below it an
+admin-only setting** *(decided 2026-09-02, before M3)*.
+
+A one-second floor is a footgun that will knock over someone's receiver, and a
+hard five-second floor with no way past it just relocates the problem — someone
+will eventually have robust gear and a real reason to poll faster, and their
+only route would be a code change. Gating it behind an admin setting keeps the
+default safe for the tech typing an interval into a form, while leaving a
+deliberate and privileged escape hatch.
+
+This lands in M3 as three things, not one: a `CHECK` constraint on
+`monitors.interval_ms`, a configurable floor in `internal/config` defaulting to
+5s, and an admin-gated override on the create and edit paths. The constraint has
+to arrive *with* M3 rather than later — a refusal added after people have written
+monitors breaks flows that already exist, which is the whole reason this plan
+front-loads its refusals.

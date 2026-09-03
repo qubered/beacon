@@ -1,0 +1,285 @@
+/* ============================================================
+   Beacon design tokens + core components — "Graphite"
+   Dark-first. Chrome is near-achromatic; hue is reserved for
+   state, data series, and the single signal accent.
+   Type: Archivo (UI, variable width) + IBM Plex Mono (all data).
+   ============================================================ */
+
+:root {
+  /* --- surfaces --- */
+  --bg0: #151614;        /* page ground */
+  --bg1: #1B1C1A;        /* panel / module */
+  --bg2: #232421;        /* raised: hover, active, popover fill */
+  --bg3: #2B2C29;        /* highest: pressed, drag */
+  --bg-input: #141513;   /* inputs sit slightly below panel */
+  --bg-th: #191A18;      /* table header band */
+  --bg-hover: #1F201D;
+
+  /* --- edges --- */
+  --edge: #292A27;       /* panel border */
+  --hairline: #242522;   /* internal rules */
+  --edge-strong: #34352F;
+
+  /* --- ink --- */
+  --ink: #E9E7E1;        /* primary text (tungsten) */
+  --sub: #A9A69E;        /* secondary */
+  --muted: #726F67;      /* tertiary, labels, placeholders */
+  --faint: #4E4C46;      /* disabled, grid dots */
+
+  /* --- the one accent: signal --- */
+  --signal: #8FB6CE;         /* links, selection, focus, info */
+  --signal-strong: #A9CCE2;
+  --signal-dim: rgba(143, 182, 206, 0.14);
+
+  /* --- state (fixed, never themed) --- */
+  --up: #4CA96A;
+  --up-dim: #3E8A58;         /* segments at rest, so walls aren't neon */
+  --warn: #D9A13C;
+  --down: #D25F5A;
+  --seg-unknown: #3A3B38;
+  --maint: #6E8CA0;          /* maintenance / silenced */
+
+  /* --- data series (validated, dark mode steps) --- */
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+  --series-7: #9085e9; --series-8: #e66767;
+
+  /* --- controls --- */
+  --btn-primary-bg: #E9E7E1; --btn-primary-ink: #151614;
+
+  /* --- geometry --- */
+  --r-panel: 4px; --r-ctl: 3px; --r-badge: 2px;
+  --row-h: 36px;
+
+  /* --- label voice --- */
+  --label-wdth: 78;
+  --label-track: 0.12em;
+
+  /* --- type --- */
+  --font-ui: "Archivo", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body {
+  background: var(--bg0); color: var(--ink);
+  font-family: var(--font-ui); font-size: 13px;
+  font-variation-settings: "wdth" 100;
+}
+a { color: var(--signal); text-decoration: none; }
+a:hover { color: var(--signal-strong); }
+
+/* ---------- label (the condensed-caps voice) ---------- */
+.lbl {
+  font-family: var(--font-ui);
+  font-variation-settings: "wdth" var(--label-wdth);
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: var(--label-track); text-transform: uppercase;
+  color: var(--muted);
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- app frame: the workbench shell ----------
+   Every surface sits in the same shell: a top bar that is a working
+   surface (facts + actions, not decoration), a global rail, the work
+   area, and a persistent status bar — the app always tells you the
+   state of the site and the platform, whatever screen you are on.  */
+.frame { display: grid; grid-template-columns: 184px 1fr; grid-template-rows: 46px 1fr 27px; height: 100vh; }
+.frame > .statusbar { grid-column: 1 / -1; }
+.topbar {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 18px;
+  padding: 0 14px; border-bottom: 1px solid var(--hairline); background: var(--bg0);
+}
+.topbar .mark {
+  font-variation-settings: "wdth" var(--label-wdth);
+  font-weight: 650; font-size: 13.5px; letter-spacing: 0.14em; color: var(--ink);
+  width: 178px;
+}
+.topbar .crumb { font-size: 12.5px; color: var(--sub); display: flex; gap: 8px; align-items: center; }
+.topbar .crumb b { color: var(--ink); font-weight: 550; }
+.topbar .crumb .sep { color: var(--faint); }
+.topbar .spacer { flex: 1; }
+.topbar .clock { font-family: var(--font-mono); font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+
+/* the ⌘K affordance — full box on calm surfaces, chip on dense ones */
+.searchbox {
+  display: flex; align-items: center; gap: 8px; width: 220px; height: 28px;
+  border: 1px solid var(--hairline); border-radius: var(--r-ctl);
+  padding: 0 10px; color: var(--muted); font-size: 12.5px; background: var(--bg1);
+}
+.searchbox kbd, .kbd {
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+  border: 1px solid var(--hairline); border-radius: 3px; padding: 1px 5px;
+}
+.searchbox kbd { margin-left: auto; }
+.search-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px;
+  border: 1px solid var(--hairline); border-radius: var(--r-ctl); color: var(--muted);
+  font-size: 11.5px; background: var(--bg1); cursor: pointer;
+}
+.search-chip:hover { color: var(--ink); }
+
+.nav {
+  border-right: 1px solid var(--hairline); background: var(--bg0);
+  padding: 8px 0 10px; display: flex; flex-direction: column; overflow-y: auto;
+}
+.nav a {
+  position: relative; display: flex; align-items: center; gap: 10px; height: 30px;
+  padding: 0 14px; color: var(--sub); font-size: 12.5px; font-weight: 500;
+}
+.nav a svg { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none;
+  stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+.nav a:hover { background: var(--bg-hover); color: var(--ink); }
+.nav a.active { background: var(--bg1); color: var(--ink); }
+.nav a.active::before { content: ""; position: absolute; left: 0; top: 5px; bottom: 5px;
+  width: 2px; background: var(--signal); }
+.nav a .n {
+  margin-left: auto; font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--down); font-weight: 600;
+}
+.nav .nav-sect { margin: 14px 14px 5px; }
+
+/* collapsed global rail — for immersive surfaces like the builder */
+.grail {
+  border-right: 1px solid var(--hairline); background: var(--bg0);
+  padding: 8px 0; display: flex; flex-direction: column; align-items: stretch;
+}
+.grail a { position: relative; display: flex; align-items: center; justify-content: center;
+  height: 34px; color: var(--muted); }
+.grail a svg { width: 16px; height: 16px; stroke: currentColor; fill: none;
+  stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.grail a:hover { color: var(--ink); background: var(--bg-hover); }
+.grail a.active { color: var(--ink); background: var(--bg1); }
+.grail a.active::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 2px; background: var(--signal); }
+.grail a .n { position: absolute; top: 4px; right: 7px; font-family: var(--font-mono);
+  font-size: 8.5px; color: var(--down); font-weight: 600; }
+.grail .grail-gap { height: 9px; margin: 4px 10px; border-bottom: 1px solid var(--hairline); }
+
+/* ---------- status bar: the shell's ground truth ---------- */
+.statusbar {
+  display: flex; align-items: center; gap: 14px; padding: 0 14px;
+  border-top: 1px solid var(--hairline); background: var(--bg0);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden;
+}
+.statusbar b { color: var(--sub); font-weight: 500; }
+.statusbar .ok3 { color: var(--up); }
+.statusbar .bad3 { color: var(--down); font-weight: 600; }
+.statusbar .warn4 { color: var(--warn); }
+.statusbar .spacer { flex: 1; }
+.statusbar a { color: var(--muted); } .statusbar a:hover { color: var(--signal); }
+
+.main { overflow: auto; background: var(--bg0); }
+
+/* ---------- structure: rules, not boxes ----------
+   Screens are organized by hairline rules, whitespace and the label
+   voice. Full-bleed tables. Stats are prose lines, never tile grids.
+   A box (.object) is reserved for things that ARE objects: a node on
+   the canvas, a popover, a hex viewport — never for page layout. */
+.sect {
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 34px;
+  border-bottom: 1px solid var(--hairline);
+}
+.sect .spacer { flex: 1; }
+.statline { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--sub); white-space: nowrap; }
+.statline b { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.statline .dim { color: var(--muted); }
+.statline .sep { color: var(--faint); margin: 0 6px; }
+
+.object { background: var(--bg1); border: 1px solid var(--edge); border-radius: var(--r-panel); }
+.popover {
+  background: var(--bg2); border: 1px solid var(--edge-strong); border-radius: var(--r-panel);
+  box-shadow: 0 6px 24px rgba(0,0,0,.45);
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 30px; padding: 0 13px; border-radius: var(--r-ctl);
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 550; letter-spacing: 0.01em;
+  border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+}
+.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-ink); }
+.btn-primary:hover { background: #FFFDF6; }
+.btn-secondary { background: var(--bg2); color: var(--ink); border-color: var(--edge); }
+.btn-secondary:hover { background: var(--bg3); }
+.btn-ghost { background: transparent; color: var(--sub); }
+.btn-ghost:hover { color: var(--ink); background: var(--bg-hover); }
+.btn-danger { background: transparent; color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, transparent); }
+.btn-sm { height: 24px; padding: 0 9px; font-size: 11.5px; }
+.btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+
+/* ---------- inputs ---------- */
+.input, .select {
+  height: 30px; padding: 0 10px; border: 1px solid var(--edge);
+  border-radius: var(--r-ctl); background: var(--bg-input); color: var(--ink);
+  font-size: 12.5px; font-family: var(--font-ui);
+}
+.input:focus, .select:focus { outline: none; border-color: var(--signal); }
+.input::placeholder { color: var(--muted); }
+.input.code { font-family: var(--font-mono); font-size: 12px; }
+
+.field { display: grid; gap: 5px; }
+.field > .lbl { font-size: 10px; }
+.field .hint { font-size: 11px; color: var(--muted); line-height: 1.45; }
+
+/* ---------- badges ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+  padding: 2.5px 7px; border-radius: var(--r-badge); border: 1px solid var(--edge);
+  color: var(--sub); background: var(--bg2); white-space: nowrap;
+}
+.badge-err  { color: var(--down); border-color: color-mix(in oklab, var(--down) 35%, transparent); background: color-mix(in oklab, var(--down) 9%, transparent); }
+.badge-warn { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 35%, transparent); background: color-mix(in oklab, var(--warn) 9%, transparent); }
+.badge-ok   { color: var(--up); border-color: color-mix(in oklab, var(--up) 35%, transparent); background: color-mix(in oklab, var(--up) 9%, transparent); }
+.badge-info { color: var(--signal); border-color: color-mix(in oklab, var(--signal) 35%, transparent); background: var(--signal-dim); }
+
+/* ---------- state grammar ---------- */
+.state { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.state .glyph { width: 9px; height: 9px; flex: none; }
+.st-up .stl { color: var(--up); }
+.st-down .stl { color: var(--down); }
+.st-suspect .stl { color: var(--down); }
+.st-degraded .stl { color: var(--warn); }
+.st-unknown .stl { color: var(--muted); }
+.st-recovering .stl { color: var(--up); }
+.st-maint .stl { color: var(--maint); }
+
+/* ---------- tables ---------- */
+table.data { width: 100%; border-collapse: collapse; }
+table.data th {
+  text-align: left; font-family: var(--font-ui);
+  font-variation-settings: "wdth" var(--label-wdth);
+  font-size: 10.5px; font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase;
+  color: var(--muted); padding: 7px 10px; border-bottom: 1px solid var(--hairline);
+  background: var(--bg-th); white-space: nowrap;
+}
+table.data td {
+  padding: 0 10px; height: var(--row-h); font-size: 12.5px; color: var(--sub);
+  border-bottom: 1px solid var(--hairline); white-space: nowrap;
+}
+table.data tr:last-child td { border-bottom: none; }
+table.data tbody tr:hover td { background: var(--bg-hover); }
+table.data td.num, table.data th.num { text-align: right; }
+table.data td.num, table.data td.code { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; }
+table.data td.dev { color: var(--ink); font-weight: 500; }
+table.data td .path { color: var(--muted); }
+
+/* ---------- segment strips ---------- */
+.strip { display: flex; gap: 2px; height: 16px; }
+.strip i, .mini-strip i { flex: 1; border-radius: 1px; background: var(--up-dim); }
+.strip i.w, .mini-strip i.w { background: var(--warn); }
+.strip i.d, .mini-strip i.d { background: var(--down); }
+.strip i.u, .mini-strip i.u { background: var(--seg-unknown); }
+.strip i.m, .mini-strip i.m { background: var(--maint); }
+.mini-strip { display: inline-flex; gap: 1px; height: 11px; vertical-align: middle; }
+.mini-strip i { flex: none; width: 3px; border-radius: 0.5px; }
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bg3); border: 2px solid var(--bg0); border-radius: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }

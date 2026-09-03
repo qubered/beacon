@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .content { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 73px); }
+  .col-main { border-right: 1px solid var(--hairline); min-width: 0; }
+  .rail { min-width: 0; }
+
+  .hero { padding: 16px 20px 16px; border-bottom: 1px solid var(--hairline); }
+  .hero .row1 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .hero .big { font-family: var(--font-mono); font-size: 26px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .hero .big .u { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .hero .facts { display: flex; gap: 8px; align-items: baseline; margin-left: auto; }
+  .hero .strip { margin-top: 13px; height: 14px; }
+  .hero .strip-foot { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--faint); }
+
+  .sect .count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+  /* incident rows (compact) */
+  .irow { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 20px; border-bottom: 1px solid var(--hairline); cursor: pointer; }
+  .irow:hover { background: var(--bg-hover); }
+  .irow .glyph { width: 10px; height: 10px; flex: none; }
+  .irow .t { font-size: 13px; font-weight: 550; color: var(--ink); white-space: nowrap; }
+  .irow .m { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .irow .dur { margin-left: auto; font-family: var(--font-mono); font-size: 12.5px; color: var(--down); font-variant-numeric: tabular-nums; }
+  .irow .dur.w { color: var(--warn); }
+  .irow .ack { font-size: 10.5px; color: var(--muted); }
+
+  /* needs-attention table tweaks */
+  .why-cell { color: var(--muted); font-size: 11.5px; }
+
+  /* right rail */
+  .rail-sect { border-bottom: 1px solid var(--hairline); padding-bottom: 6px; }
+  .rail-sect .sect { border-bottom: 1px solid var(--hairline); }
+  .arow { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 16px; font-size: 12.5px; color: var(--sub); }
+  .arow .g { width: 8px; height: 8px; border-radius: 50%; background: var(--up); flex: none; }
+  .arow .g.re { background: none; border: 1.5px solid var(--warn); }
+  .arow .g.lo { background: var(--sub); }
+  .arow b { color: var(--ink); font-weight: 550; }
+  .arow .meta { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .arow .meta .w { color: var(--warn); }
+
+  .evrow { display: flex; gap: 12px; padding: 5px 16px; font-size: 12px; }
+  .evrow .ts { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); width: 52px; flex: none; padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .evrow .ev { color: var(--sub); line-height: 1.45; }
+  .evrow .ev b { color: var(--ink); font-weight: 550; }
+  .evrow .ev .d2 { color: var(--down); font-weight: 600; }
+  .evrow .ev .w2 { color: var(--warn); font-weight: 600; }
+  .evrow .ev .m2 { color: var(--muted); }
+  .events { padding: 6px 0 10px; }
+
+  .tonight { padding: 12px 16px 16px; display: grid; gap: 9px; }
+  .tonight .trow { display: flex; gap: 10px; align-items: baseline; font-size: 12.5px; color: var(--sub); }
+  .tonight .trow .when { font-family: var(--font-mono); font-size: 11px; color: var(--muted); width: 92px; flex: none; font-variant-numeric: tabular-nums; }
+  .tonight .trow b { color: var(--ink); font-weight: 550; }
+  .tonight .trow .warn5 { color: var(--warn); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Dashboard</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html" class="active"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="col-main">
+
+        <div class="hero">
+          <div class="row1">
+            <span class="big">99.87<span class="u">% up · 24 h</span></span>
+            <span class="statline" style="margin-left:18px"><b>118</b> of <b>124</b> devices up
+              <span class="sep">·</span><b style="color:var(--down)">2</b> down
+              <span class="sep">·</span><b style="color:var(--warn)">1</b> suspect
+              <span class="sep">·</span><b>3</b> unknown</span>
+            <span class="facts statline dim mono" style="font-size:11px">341 k runs · 0 missed</span>
+          </div>
+          <div class="strip">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="strip-foot"><span>18:42 yesterday</span><span>06:42</span><span>now</span></div>
+        </div>
+
+        <div class="sect">
+          <span class="lbl">Open incidents</span><span class="count">2 open · 1 pre-alert</span>
+          <span class="spacer"></span>
+          <a href="incidents.html" style="font-size:11.5px">All incidents →</a>
+        </div>
+        <div class="irow">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+          <span class="t">Stage Switch A</span>
+          <span class="m">timeout · 14 dependents suppressed · unacknowledged</span>
+          <span class="dur">4:12</span>
+        </div>
+        <div class="irow">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+          <span class="t">Projector — West</span>
+          <span class="m">assertion · lamp fault · ack — jt 18:39</span>
+          <span class="dur">11:03</span>
+        </div>
+        <div class="irow">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg>
+          <span class="t">DSP Core</span>
+          <span class="m">clock drift · 1 of 3 failures · polling faster · no page yet</span>
+          <span class="dur w">0:41</span>
+        </div>
+
+        <div class="sect">
+          <span class="lbl">Needs attention</span><span class="count">before it pages anyone</span>
+        </div>
+        <table class="data">
+          <thead><tr><th>What</th><th>Signal</th><th>Why it matters</th><th class="num">For</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="dev">DSP Core <span class="path">/ Clock sync</span></td>
+              <td><span class="badge badge-warn">flap 38%</span></td>
+              <td class="why-cell">oscillating above the 30% flap threshold — usually a marginal link or clock source</td>
+              <td class="code num">1 h 20 m</td>
+            </tr>
+            <tr>
+              <td class="dev">Wireless RX 07 <span class="path">/ 2 monitors</span></td>
+              <td><span class="badge badge-warn">throttled ×3</span></td>
+              <td class="why-cell">device bucket exhausted — two monitors share one receiver; widen interval or drop one</td>
+              <td class="code num">today</td>
+            </tr>
+            <tr>
+              <td class="dev">agent lx</td>
+              <td><span class="badge badge-warn">spool 1 240</span></td>
+              <td class="why-cell">reconnecting for 41 s — results are spooling locally and will backfill</td>
+              <td class="code num">41 s</td>
+            </tr>
+            <tr>
+              <td class="dev">Streaming encoder <span class="path">/ TLS</span></td>
+              <td><span class="badge badge-info">cert 12 d</span></td>
+              <td class="why-cell">certificate expires 2026-09-15 — renew before it becomes a 2 a.m. page</td>
+              <td class="code num">12 d</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <div class="rail">
+        <div class="rail-sect">
+          <div class="sect"><span class="lbl">Agents</span><span class="spacer"></span><a href="agents.html" style="font-size:11.5px">Fleet →</a></div>
+          <div class="arow"><span class="g"></span><b>av</b> · stage VLANs<span class="meta">61 mon · spool 14 · +4 ms</span></div>
+          <div class="arow"><span class="g re"></span><b>lx</b> · lighting<span class="meta"><span class="w">reconnecting · spool 1 240</span></span></div>
+          <div class="arow"><span class="g"></span><b>corp</b> · office<span class="meta">22 mon · spool 0 · +12 ms</span></div>
+          <div class="arow"><span class="g lo"></span><b>core-local</b> · loopback<span class="meta">23 mon · spool 0 · 0 ms</span></div>
+        </div>
+
+        <div class="rail-sect">
+          <div class="sect"><span class="lbl">Last hour</span></div>
+          <div class="events">
+            <div class="evrow"><span class="ts">18:41</span><span class="ev"><b>RX 07</b> RF ch07 crossed warn band — <span class="w2">degraded</span></span></div>
+            <div class="evrow"><span class="ts">18:38</span><span class="ev"><b>Stage Switch A</b> → <span class="d2">down</span> · one page sent, 14 suppressed</span></div>
+            <div class="evrow"><span class="ts">18:36</span><span class="ev"><b>lx</b> link lost — devices held, spooling <span class="m2">(I6)</span></span></div>
+            <div class="evrow"><span class="ts">18:31</span><span class="ev"><b>Projector — West</b> lamp fault asserted · <span class="d2">down</span></span></div>
+            <div class="evrow"><span class="ts">18:12</span><span class="ev"><b>discovery</b> found 2 candidates on VLAN 60 — <a href="#">review</a></span></div>
+            <div class="evrow"><span class="ts">17:58</span><span class="ev"><b>flow</b> Audio Controller — Clock Health v3 published by jt · 6 monitors updated</span></div>
+          </div>
+        </div>
+
+        <div class="rail-sect" style="border-bottom:none">
+          <div class="sect"><span class="lbl">Tonight</span></div>
+          <div class="tonight">
+            <div class="trow"><span class="when">19:30–23:00</span><span><b class="warn5">Show mode — Main Hall</b> · non-critical muted, stage gear polled faster</span></div>
+            <div class="trow"><span class="when">22:00–23:00</span><span><b>Maintenance — Amp rack B</b> · collection continues, notifications held</span></div>
+            <div class="trow"><span class="when">02:00</span><span>retention: partitions rotate · backups verified <span style="color:var(--up)">✓ last night</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

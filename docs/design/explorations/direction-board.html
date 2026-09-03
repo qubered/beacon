@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Direction Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { background: #0C0C0C; color: #DDD; font-family: "Archivo", system-ui, sans-serif; }
+
+  .board-intro {
+    max-width: 1200px; margin: 0 auto; padding: 48px 40px 8px;
+  }
+  .board-intro h1 { font-size: 15px; font-weight: 600; letter-spacing: .02em; color: #EFEDE8; }
+  .board-intro p { font-size: 13px; color: #8B8983; margin-top: 6px; max-width: 68ch; line-height: 1.5; }
+
+  .board {
+    max-width: 1200px; margin: 40px auto; padding: 0 40px;
+  }
+  .board-label {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+  }
+  .board-label .tag {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+    color: #0C0C0C; background: #C9C6BE; padding: 2px 7px; border-radius: 2px;
+  }
+  .board-label h2 { font-size: 14px; font-weight: 600; color: #EFEDE8; letter-spacing: .01em; }
+  .board-label span.note { font-size: 12.5px; color: #8B8983; }
+
+  /* ============ shared slice structure, themed per board ============ */
+  .slice {
+    background: var(--bg0); color: var(--ink);
+    border: 1px solid var(--edge-outer); border-radius: 6px; overflow: hidden;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-variation-settings: "wdth" 100;
+    font-size: 13px;
+  }
+
+  /* top bar */
+  .tb {
+    display: flex; align-items: center; gap: 20px; height: 46px;
+    padding: 0 16px; background: var(--bg0); border-bottom: 1px solid var(--hairline);
+  }
+  .tb .mark {
+    font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-weight: 650; font-size: 13.5px; letter-spacing: .14em; color: var(--ink);
+  }
+  .tb .crumb { font-size: 12.5px; color: var(--sub); display: flex; gap: 8px; align-items: center; }
+  .tb .crumb b { color: var(--ink); font-weight: 500; }
+  .tb .crumb .sep { color: var(--muted); }
+  .tb .spacer { flex: 1; }
+  .tb .search {
+    display: flex; align-items: center; gap: 8px; width: 220px; height: 28px;
+    border: 1px solid var(--hairline); border-radius: var(--r-ctl);
+    padding: 0 10px; color: var(--muted); font-size: 12.5px; background: var(--bg1);
+  }
+  .tb .search kbd {
+    margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    border: 1px solid var(--hairline); border-radius: 3px; padding: 1px 4px; color: var(--muted);
+  }
+  .tb .clock { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+
+  /* content pad */
+  .pad { padding: 18px 16px; display: grid; gap: var(--gap-section); }
+
+  /* stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap-tile); }
+  .tile {
+    background: var(--bg1); border: 1px solid var(--edge); border-radius: var(--r-panel);
+    padding: 12px 14px 13px; box-shadow: var(--elev);
+  }
+  .tile .k {
+    font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track);
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+  .tile .v {
+    font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500;
+    letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums;
+    display: flex; align-items: baseline; gap: 7px;
+  }
+  .tile .v .unit { font-size: 12px; color: var(--muted); letter-spacing: 0; }
+  .tile .v .delta-bad { font-size: 12px; color: var(--down); }
+  .tile.alert { border-color: color-mix(in oklab, var(--down) 45%, var(--edge)); }
+  .tile.alert .v { color: var(--down); }
+
+  /* uptime segment strip */
+  .strip-block { background: var(--bg1); border: 1px solid var(--edge); border-radius: var(--r-panel); padding: 12px 14px 14px; box-shadow: var(--elev); }
+  .strip-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .strip-head .k {
+    font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track);
+    text-transform: uppercase; color: var(--muted);
+  }
+  .strip-head .pct { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink); }
+  .strip-head .pct em { font-style: normal; color: var(--muted); font-size: 11px; margin-left: 6px; }
+  .strip { display: flex; gap: 2px; height: 16px; }
+  .strip i { flex: 1; border-radius: 1px; background: var(--up-dim); }
+  .strip i.w { background: var(--warn); }
+  .strip i.d { background: var(--down); }
+  .strip i.u { background: var(--seg-unknown); }
+  .strip-foot { display: flex; justify-content: space-between; margin-top: 8px; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
+
+  /* table */
+  .panel { background: var(--bg1); border: 1px solid var(--edge); border-radius: var(--r-panel); overflow: hidden; box-shadow: var(--elev); }
+  .panel-head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .panel-head .k {
+    font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track);
+    text-transform: uppercase; color: var(--muted);
+  }
+  .panel-head .count { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); }
+  .panel-head .spacer { flex: 1; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-size: 10.5px; font-weight: 600; letter-spacing: var(--label-track); text-transform: uppercase;
+    color: var(--muted); padding: 7px 10px; border-bottom: 1px solid var(--hairline);
+    background: var(--bg-th); white-space: nowrap;
+  }
+  td {
+    padding: 0 10px; height: var(--row-h); font-size: 12.5px; color: var(--sub);
+    border-bottom: 1px solid var(--hairline); white-space: nowrap;
+  }
+  td.dev { max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-hover); }
+  td.dev { color: var(--ink); font-weight: 500; }
+  td.mono, th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  td.mono { font-size: 11.5px; }
+  td.num, th.num { text-align: right; }
+  td .path { color: var(--muted); }
+
+  /* state grammar */
+  .state { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; }
+  .glyph { width: 9px; height: 9px; flex: none; }
+  .state .lbl { letter-spacing: .01em; }
+  .st-up .lbl { color: var(--up); }
+  .st-down .lbl { color: var(--down); }
+  .st-suspect .lbl { color: var(--down); }
+  .st-degraded .lbl { color: var(--warn); }
+  .st-unknown .lbl { color: var(--muted); }
+  .st-recovering .lbl { color: var(--up); }
+  .suppressed-by { font-size: 11px; color: var(--muted); margin-left: 8px; }
+  .suppressed-by a { color: var(--accent-ink); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--accent-ink) 40%, transparent); }
+
+  /* mini segment strip in table */
+  .mini-strip { display: inline-flex; gap: 1px; height: 11px; vertical-align: middle; }
+  .mini-strip i { width: 3px; border-radius: 0.5px; background: var(--up-dim); }
+  .mini-strip i.w { background: var(--warn); }
+  .mini-strip i.d { background: var(--down); }
+  .mini-strip i.u { background: var(--seg-unknown); }
+
+  /* flap */
+  .flap-ok { color: var(--muted); }
+  .flap-bad { color: var(--warn); font-weight: 600; }
+
+  /* controls row */
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px;
+    border-radius: var(--r-ctl); font-family: "Archivo"; font-size: 12.5px; font-weight: 550;
+    border: 1px solid transparent; cursor: pointer; letter-spacing: .01em;
+  }
+  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-ink); border-color: var(--btn-primary-edge); }
+  .btn-secondary { background: var(--bg2); color: var(--ink); border-color: var(--edge); }
+  .btn-ghost { background: transparent; color: var(--sub); border-color: transparent; }
+  .btn-danger { background: transparent; color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, transparent); }
+  .input {
+    height: 30px; padding: 0 10px; width: 190px; border: 1px solid var(--edge);
+    border-radius: var(--r-ctl); background: var(--bg-input); color: var(--ink); font-size: 12.5px;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .input::placeholder { color: var(--muted); font-family: "Archivo"; }
+  .badges { display: inline-flex; gap: 6px; margin-left: auto; }
+  .badge {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 500;
+    padding: 3px 7px; border-radius: var(--r-badge); border: 1px solid;
+  }
+  .badge-timeout { color: var(--down); border-color: color-mix(in oklab, var(--down) 35%, transparent); background: color-mix(in oklab, var(--down) 9%, transparent); }
+  .badge-protocol { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 35%, transparent); background: color-mix(in oklab, var(--warn) 9%, transparent); }
+  .badge-assert { color: var(--accent-ink); border-color: color-mix(in oklab, var(--accent-ink) 35%, transparent); background: color-mix(in oklab, var(--accent-ink) 9%, transparent); }
+
+  /* chart */
+  .chart-block { background: var(--bg1); border: 1px solid var(--edge); border-radius: var(--r-panel); padding: 12px 14px; box-shadow: var(--elev); }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .chart-head .k {
+    font-family: "Archivo"; font-variation-settings: "wdth" var(--label-wdth);
+    font-size: var(--label-size); font-weight: 600; letter-spacing: var(--label-track);
+    text-transform: uppercase; color: var(--muted);
+  }
+  .chart-head .val { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink); }
+  .chart-head .val em { font-style: normal; color: var(--muted); }
+
+  .grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: var(--gap-tile); }
+
+  /* ================= BOARD A — GRAPHITE ================= */
+  .theme-a {
+    --bg0: #151614; --bg1: #1B1C1A; --bg2: #232421; --bg-th: #191A18;
+    --bg-hover: #1F201D; --bg-input: #141513;
+    --edge-outer: #2A2B28; --edge: #292A27; --hairline: #242522;
+    --ink: #E9E7E1; --sub: #A9A69E; --muted: #726F67;
+    --accent-ink: #8FB6CE;
+    --up: #4CA96A; --up-dim: #3E8A58; --warn: #D9A13C; --down: #D25F5A;
+    --seg-unknown: #3A3B38;
+    --btn-primary-bg: #E9E7E1; --btn-primary-ink: #151614; --btn-primary-edge: #E9E7E1;
+    --r-panel: 4px; --r-ctl: 3px; --r-badge: 2px;
+    --elev: none;
+    --label-wdth: 78; --label-size: 10.5px; --label-track: .12em;
+    --row-h: 36px; --gap-section: 14px; --gap-tile: 10px;
+  }
+
+  /* ================= BOARD B — CARBON ================= */
+  .theme-b {
+    --bg0: #101114; --bg1: #16181C; --bg2: #1D2025; --bg-th: #14161A;
+    --bg-hover: #1A1D22; --bg-input: #0E0F12;
+    --edge-outer: #24262C; --edge: #23252B; --hairline: #1E2026;
+    --ink: #E8EAEE; --sub: #A3A8B3; --muted: #6B707C;
+    --accent-ink: #7BA3F0;
+    --up: #46A66F; --up-dim: #38875A; --warn: #D9A13C; --down: #D95C55;
+    --seg-unknown: #33363D;
+    --btn-primary-bg: #3E6FD9; --btn-primary-ink: #F2F5FB; --btn-primary-edge: #4A7AE2;
+    --r-panel: 8px; --r-ctl: 6px; --r-badge: 5px;
+    --elev: 0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.18);
+    --label-wdth: 100; --label-size: 10.5px; --label-track: .07em;
+    --row-h: 40px; --gap-section: 16px; --gap-tile: 12px;
+  }
+  .theme-b .tb .mark { letter-spacing: .1em; font-variation-settings: "wdth" 100; }
+
+  /* ================= BOARD C — TUNGSTEN ================= */
+  .theme-c {
+    --bg0: #131312; --bg1: #191918; --bg2: #21211F; --bg-th: #171716;
+    --bg-hover: #1D1D1B; --bg-input: #121211;
+    --edge-outer: #2B2B29; --edge: #282826; --hairline: #222220;
+    --ink: #EAE8E3; --sub: #A7A49C; --muted: #6E6C64;
+    --accent-ink: #C9C6BE;
+    --up: #4CA96A; --up-dim: #3E8A58; --warn: #D9A13C; --down: #D25F5A;
+    --seg-unknown: #383836;
+    --btn-primary-bg: #EAE8E3; --btn-primary-ink: #131312; --btn-primary-edge: #EAE8E3;
+    --r-panel: 2px; --r-ctl: 2px; --r-badge: 1px;
+    --elev: none;
+    --label-wdth: 70; --label-size: 10px; --label-track: .16em;
+    --row-h: 32px; --gap-section: 12px; --gap-tile: 8px;
+  }
+  .theme-c .suppressed-by a { color: var(--ink); border-bottom-color: var(--muted); }
+  .theme-c .badge-assert { color: var(--sub); border-color: var(--edge); background: var(--bg2); }
+</style>
+</head>
+<body>
+
+<div class="board-intro">
+  <h1>Beacon — direction board · round 1</h1>
+  <p>The same UI slice in three treatments. State colors and the shape grammar are constant across
+  all three (that part is settled by accessibility, not taste). What varies: neutral temperature,
+  corner radius and elevation, accent presence, label voice, and density.</p>
+</div>
+
+<!-- ============================= BOARD A ============================= -->
+<div class="board">
+  <div class="board-label">
+    <span class="tag">A</span>
+    <h2>Graphite</h2>
+    <span class="note">warm graphite · flat panels, hairline borders · accent only for links/selection · condensed-caps labels · dense</span>
+  </div>
+
+  <div class="slice theme-a">
+    <div class="tb">
+      <span class="mark">BEACON</span>
+      <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Status</span>
+      <span class="spacer"></span>
+      <span class="search">Search devices, flows…<kbd>⌘K</kbd></span>
+      <span class="clock">18:42:07</span>
+    </div>
+    <div class="pad">
+      <div class="tiles">
+        <div class="tile"><div class="k">Devices up</div><div class="v">118<span class="unit">/ 124</span></div></div>
+        <div class="tile alert"><div class="k">Down</div><div class="v">2<span class="delta-bad">▲ 1</span></div></div>
+        <div class="tile"><div class="k">Suspect</div><div class="v">1</div></div>
+        <div class="tile"><div class="k">Agents</div><div class="v">4<span class="unit">/ 4 linked</span></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><span class="k">Monitors — Stage West</span><span class="count">6 of 41</span>
+            <span class="spacer"></span><span class="badges">
+              <span class="badge badge-timeout">timeout</span>
+              <span class="badge badge-protocol">protocol</span>
+              <span class="badge badge-assert">assertion</span>
+            </span>
+          </div>
+          <table>
+            <thead><tr><th>Device / Monitor</th><th>State</th><th class="num">Age</th><th>30 d</th><th class="num">Flap</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="dev">Wireless RX 07 <span class="path">/ Channel health</span></td>
+                <td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="lbl">Up</span></span></td>
+                <td class="mono num">12 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">0%</td>
+              </tr>
+              <tr>
+                <td class="dev">Stage Switch A <span class="path">/ Interface errors</span></td>
+                <td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="lbl">Down</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td>
+                <td class="mono num flap-ok">4%</td>
+              </tr>
+              <tr>
+                <td class="dev">Projector — Main <span class="path">/ Lamp hours</span><span class="suppressed-by">suppressed · parent <a href="#">Stage Switch A</a></span></td>
+                <td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="lbl">Unknown</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i class="u"></i></span></td>
+                <td class="mono num flap-ok">—</td>
+              </tr>
+              <tr>
+                <td class="dev">DSP Core <span class="path">/ Clock sync</span></td>
+                <td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="lbl">Suspect</span></span></td>
+                <td class="mono num">8 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i></span></td>
+                <td class="mono num flap-bad">38%</td>
+              </tr>
+              <tr>
+                <td class="dev">Camera PTZ 3 <span class="path">/ Stream bitrate</span></td>
+                <td><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="lbl">Degraded</span></span></td>
+                <td class="mono num">44 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i></span></td>
+                <td class="mono num flap-ok">2%</td>
+              </tr>
+              <tr>
+                <td class="dev">UPS — Rack 2 <span class="path">/ Battery runtime</span></td>
+                <td><span class="state st-recovering"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg><span class="lbl">Recovering</span></span></td>
+                <td class="mono num">3 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">6%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:grid; gap: var(--gap-tile); align-content: start;">
+          <div class="strip-block">
+            <div class="strip-head"><span class="k">Uptime — 90 days</span><span class="pct">99.62%<em>excl. maintenance</em></span></div>
+            <div class="strip">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="strip-foot"><span>MAY 30</span><span>JUL 14</span><span>AUG 28</span></div>
+          </div>
+
+          <div class="chart-block">
+            <div class="chart-head"><span class="k">RF Level — CH 07</span><span class="val">-61 dBm <em>· warn -75 · crit -85</em></span></div>
+            <svg viewBox="0 0 420 110" width="100%" style="display:block">
+              <line x1="0" y1="27" x2="420" y2="27" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="54" x2="420" y2="54" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="81" x2="420" y2="81" stroke="var(--hairline)" stroke-width="1"/>
+              <rect x="0" y="78" width="420" height="14" fill="var(--warn)" opacity="0.10"/>
+              <rect x="0" y="92" width="420" height="18" fill="var(--down)" opacity="0.10"/>
+              <line x1="0" y1="78" x2="420" y2="78" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <line x1="0" y1="92" x2="420" y2="92" stroke="var(--down)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <polyline fill="none" stroke="#3987e5" stroke-width="1.8" stroke-linejoin="round"
+                points="0,42 20,40 40,45 60,38 80,41 100,36 120,44 140,39 160,47 180,43 200,52 220,58 240,50 260,64 280,71 300,83 310,74 320,66 340,58 360,50 380,46 400,44 420,45"/>
+              <circle cx="300" cy="83" r="3" fill="#3987e5" stroke="var(--bg1)" stroke-width="1.6"/>
+              <text x="292" y="103" font-family="IBM Plex Mono" font-size="9.5" fill="var(--warn)">-78 dBm · 18:31</text>
+            </svg>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-primary">▸ Test run</button>
+            <button class="btn btn-secondary">Save draft</button>
+            <button class="btn btn-ghost">History</button>
+            <button class="btn btn-danger">Revoke</button>
+            <input class="input" placeholder="Filter by tag…">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= BOARD B ============================= -->
+<div class="board">
+  <div class="board-label">
+    <span class="tag">B</span>
+    <h2>Carbon</h2>
+    <span class="note">cool near-black · soft radius, subtle elevation · blue accent incl. primary button · normal-width labels · relaxed</span>
+  </div>
+
+  <div class="slice theme-b">
+    <div class="tb">
+      <span class="mark">BEACON</span>
+      <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Status</span>
+      <span class="spacer"></span>
+      <span class="search">Search devices, flows…<kbd>⌘K</kbd></span>
+      <span class="clock">18:42:07</span>
+    </div>
+    <div class="pad">
+      <div class="tiles">
+        <div class="tile"><div class="k">Devices up</div><div class="v">118<span class="unit">/ 124</span></div></div>
+        <div class="tile alert"><div class="k">Down</div><div class="v">2<span class="delta-bad">▲ 1</span></div></div>
+        <div class="tile"><div class="k">Suspect</div><div class="v">1</div></div>
+        <div class="tile"><div class="k">Agents</div><div class="v">4<span class="unit">/ 4 linked</span></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><span class="k">Monitors — Stage West</span><span class="count">6 of 41</span>
+            <span class="spacer"></span><span class="badges">
+              <span class="badge badge-timeout">timeout</span>
+              <span class="badge badge-protocol">protocol</span>
+              <span class="badge badge-assert">assertion</span>
+            </span>
+          </div>
+          <table>
+            <thead><tr><th>Device / Monitor</th><th>State</th><th class="num">Age</th><th>30 d</th><th class="num">Flap</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="dev">Wireless RX 07 <span class="path">/ Channel health</span></td>
+                <td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="lbl">Up</span></span></td>
+                <td class="mono num">12 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">0%</td>
+              </tr>
+              <tr>
+                <td class="dev">Stage Switch A <span class="path">/ Interface errors</span></td>
+                <td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="lbl">Down</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td>
+                <td class="mono num flap-ok">4%</td>
+              </tr>
+              <tr>
+                <td class="dev">Projector — Main <span class="path">/ Lamp hours</span><span class="suppressed-by">suppressed · parent <a href="#">Stage Switch A</a></span></td>
+                <td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="lbl">Unknown</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i class="u"></i></span></td>
+                <td class="mono num flap-ok">—</td>
+              </tr>
+              <tr>
+                <td class="dev">DSP Core <span class="path">/ Clock sync</span></td>
+                <td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="lbl">Suspect</span></span></td>
+                <td class="mono num">8 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i></span></td>
+                <td class="mono num flap-bad">38%</td>
+              </tr>
+              <tr>
+                <td class="dev">Camera PTZ 3 <span class="path">/ Stream bitrate</span></td>
+                <td><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="lbl">Degraded</span></span></td>
+                <td class="mono num">44 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i></span></td>
+                <td class="mono num flap-ok">2%</td>
+              </tr>
+              <tr>
+                <td class="dev">UPS — Rack 2 <span class="path">/ Battery runtime</span></td>
+                <td><span class="state st-recovering"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg><span class="lbl">Recovering</span></span></td>
+                <td class="mono num">3 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">6%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:grid; gap: var(--gap-tile); align-content: start;">
+          <div class="strip-block">
+            <div class="strip-head"><span class="k">Uptime — 90 days</span><span class="pct">99.62%<em>excl. maintenance</em></span></div>
+            <div class="strip">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="strip-foot"><span>MAY 30</span><span>JUL 14</span><span>AUG 28</span></div>
+          </div>
+
+          <div class="chart-block">
+            <div class="chart-head"><span class="k">RF Level — CH 07</span><span class="val">-61 dBm <em>· warn -75 · crit -85</em></span></div>
+            <svg viewBox="0 0 420 110" width="100%" style="display:block">
+              <line x1="0" y1="27" x2="420" y2="27" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="54" x2="420" y2="54" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="81" x2="420" y2="81" stroke="var(--hairline)" stroke-width="1"/>
+              <rect x="0" y="78" width="420" height="14" fill="var(--warn)" opacity="0.10"/>
+              <rect x="0" y="92" width="420" height="18" fill="var(--down)" opacity="0.10"/>
+              <line x1="0" y1="78" x2="420" y2="78" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <line x1="0" y1="92" x2="420" y2="92" stroke="var(--down)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <polyline fill="none" stroke="#3987e5" stroke-width="1.8" stroke-linejoin="round"
+                points="0,42 20,40 40,45 60,38 80,41 100,36 120,44 140,39 160,47 180,43 200,52 220,58 240,50 260,64 280,71 300,83 310,74 320,66 340,58 360,50 380,46 400,44 420,45"/>
+              <circle cx="300" cy="83" r="3" fill="#3987e5" stroke="var(--bg1)" stroke-width="1.6"/>
+              <text x="292" y="103" font-family="IBM Plex Mono" font-size="9.5" fill="var(--warn)">-78 dBm · 18:31</text>
+            </svg>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-primary">▸ Test run</button>
+            <button class="btn btn-secondary">Save draft</button>
+            <button class="btn btn-ghost">History</button>
+            <button class="btn btn-danger">Revoke</button>
+            <input class="input" placeholder="Filter by tag…">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= BOARD C ============================= -->
+<div class="board">
+  <div class="board-label">
+    <span class="tag">C</span>
+    <h2>Tungsten</h2>
+    <span class="note">neutral graphite · no hue accent at all — interactive is bright ink · sharpest corners · most condensed labels · densest</span>
+  </div>
+
+  <div class="slice theme-c">
+    <div class="tb">
+      <span class="mark">BEACON</span>
+      <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Status</span>
+      <span class="spacer"></span>
+      <span class="search">Search devices, flows…<kbd>⌘K</kbd></span>
+      <span class="clock">18:42:07</span>
+    </div>
+    <div class="pad">
+      <div class="tiles">
+        <div class="tile"><div class="k">Devices up</div><div class="v">118<span class="unit">/ 124</span></div></div>
+        <div class="tile alert"><div class="k">Down</div><div class="v">2<span class="delta-bad">▲ 1</span></div></div>
+        <div class="tile"><div class="k">Suspect</div><div class="v">1</div></div>
+        <div class="tile"><div class="k">Agents</div><div class="v">4<span class="unit">/ 4 linked</span></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><span class="k">Monitors — Stage West</span><span class="count">6 of 41</span>
+            <span class="spacer"></span><span class="badges">
+              <span class="badge badge-timeout">timeout</span>
+              <span class="badge badge-protocol">protocol</span>
+              <span class="badge badge-assert">assertion</span>
+            </span>
+          </div>
+          <table>
+            <thead><tr><th>Device / Monitor</th><th>State</th><th class="num">Age</th><th>30 d</th><th class="num">Flap</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="dev">Wireless RX 07 <span class="path">/ Channel health</span></td>
+                <td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="lbl">Up</span></span></td>
+                <td class="mono num">12 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">0%</td>
+              </tr>
+              <tr>
+                <td class="dev">Stage Switch A <span class="path">/ Interface errors</span></td>
+                <td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="lbl">Down</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td>
+                <td class="mono num flap-ok">4%</td>
+              </tr>
+              <tr>
+                <td class="dev">Projector — Main <span class="path">/ Lamp hours</span><span class="suppressed-by">suppressed · parent <a href="#">Stage Switch A</a></span></td>
+                <td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="lbl">Unknown</span></span></td>
+                <td class="mono num">31 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i class="u"></i></span></td>
+                <td class="mono num flap-ok">—</td>
+              </tr>
+              <tr>
+                <td class="dev">DSP Core <span class="path">/ Clock sync</span></td>
+                <td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="lbl">Suspect</span></span></td>
+                <td class="mono num">8 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i></span></td>
+                <td class="mono num flap-bad">38%</td>
+              </tr>
+              <tr>
+                <td class="dev">Camera PTZ 3 <span class="path">/ Stream bitrate</span></td>
+                <td><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="lbl">Degraded</span></span></td>
+                <td class="mono num">44 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i></span></td>
+                <td class="mono num flap-ok">2%</td>
+              </tr>
+              <tr>
+                <td class="dev">UPS — Rack 2 <span class="path">/ Battery runtime</span></td>
+                <td><span class="state st-recovering"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg><span class="lbl">Recovering</span></span></td>
+                <td class="mono num">3 s</td>
+                <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i></span></td>
+                <td class="mono num flap-ok">6%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:grid; gap: var(--gap-tile); align-content: start;">
+          <div class="strip-block">
+            <div class="strip-head"><span class="k">Uptime — 90 days</span><span class="pct">99.62%<em>excl. maintenance</em></span></div>
+            <div class="strip">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="strip-foot"><span>MAY 30</span><span>JUL 14</span><span>AUG 28</span></div>
+          </div>
+
+          <div class="chart-block">
+            <div class="chart-head"><span class="k">RF Level — CH 07</span><span class="val">-61 dBm <em>· warn -75 · crit -85</em></span></div>
+            <svg viewBox="0 0 420 110" width="100%" style="display:block">
+              <line x1="0" y1="27" x2="420" y2="27" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="54" x2="420" y2="54" stroke="var(--hairline)" stroke-width="1"/>
+              <line x1="0" y1="81" x2="420" y2="81" stroke="var(--hairline)" stroke-width="1"/>
+              <rect x="0" y="78" width="420" height="14" fill="var(--warn)" opacity="0.10"/>
+              <rect x="0" y="92" width="420" height="18" fill="var(--down)" opacity="0.10"/>
+              <line x1="0" y1="78" x2="420" y2="78" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <line x1="0" y1="92" x2="420" y2="92" stroke="var(--down)" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>
+              <polyline fill="none" stroke="#3987e5" stroke-width="1.8" stroke-linejoin="round"
+                points="0,42 20,40 40,45 60,38 80,41 100,36 120,44 140,39 160,47 180,43 200,52 220,58 240,50 260,64 280,71 300,83 310,74 320,66 340,58 360,50 380,46 400,44 420,45"/>
+              <circle cx="300" cy="83" r="3" fill="#3987e5" stroke="var(--bg1)" stroke-width="1.6"/>
+              <text x="292" y="103" font-family="IBM Plex Mono" font-size="9.5" fill="var(--warn)">-78 dBm · 18:31</text>
+            </svg>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-primary">▸ Test run</button>
+            <button class="btn btn-secondary">Save draft</button>
+            <button class="btn btn-ghost">History</button>
+            <button class="btn btn-danger">Revoke</button>
+            <input class="input" placeholder="Filter by tag…">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+</body>
+</html>

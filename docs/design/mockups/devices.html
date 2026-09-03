@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Devices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .content { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 73px); }
+  .tree { border-right: 1px solid var(--hairline); padding-bottom: 24px; overflow-y: auto; }
+  .tree .sect { border-bottom: 1px solid var(--hairline); }
+  .trow { display: flex; align-items: center; gap: 8px; height: 27px; padding: 0 14px; font-size: 12.5px; color: var(--sub); white-space: nowrap; }
+  .trow:hover { background: var(--bg-hover); }
+  .trow .tw { font-family: var(--font-mono); font-size: 11px; color: var(--faint); white-space: pre; }
+  .trow .glyph { width: 8px; height: 8px; flex: none; }
+  .trow .nm { overflow: hidden; text-overflow: ellipsis; }
+  .trow.dim { color: var(--muted); }
+  .trow.is-down { color: var(--down); font-weight: 550; }
+  .trow .agent-tag { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--faint); }
+  .tree-foot { padding: 10px 14px; font-size: 11px; color: var(--muted); }
+
+  .listing { min-width: 0; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+  .toolbar .input { width: 200px; }
+  .toolbar .select { width: auto; color: var(--sub); font-size: 12px; }
+  .toolbar .spacer { flex: 1; }
+  .count-line { font-size: 11.5px; color: var(--muted); padding-left: 6px; }
+
+  td .tag { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--edge); border-radius: 2px; padding: 1px 5px; margin-right: 4px; }
+  .reach { font-family: var(--font-mono); font-size: 10px; color: var(--warn); }
+  .suppressed-note { font-size: 11px; color: var(--muted); }
+  .suppressed-note a { color: var(--signal); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Devices</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html" class="active"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+
+      <div class="tree">
+        <div class="sect" style="border-bottom:1px solid var(--hairline)">
+          <span class="lbl">Dependency graph</span>
+          <span class="spacer"></span>
+          <span class="mono" style="font-size:10px;color:var(--faint)">DAG</span>
+        </div>
+        <div class="trow"><span class="tw"> </span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Firewall</span><span class="agent-tag">corp</span></div>
+        <div class="trow"><span class="tw"> └─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Core Switch</span><span class="agent-tag">corp</span></div>
+        <div class="trow is-down"><span class="tw">    ├─</span><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="nm">Stage Switch A</span><span class="agent-tag">av</span></div>
+        <div class="trow dim"><span class="tw">    │  ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="nm">Wireless RX 07</span><span class="agent-tag">av</span></div>
+        <div class="trow dim"><span class="tw">    │  ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="nm">Antenna combiner</span><span class="agent-tag">av</span></div>
+        <div class="trow dim"><span class="tw">    │  └─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="nm">12 more suppressed…</span></div>
+        <div class="trow"><span class="tw">    ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Stage Switch B</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    │  ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">DSP Core</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    │  └─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Stagebox 1</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">FOH Switch</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    │  ├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Mixer — FOH</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    │  └─</span><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="nm">Camera PTZ 3</span><span class="agent-tag">av</span></div>
+        <div class="trow"><span class="tw">    └─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">Wi-Fi AP — floor</span><span class="agent-tag">corp</span></div>
+        <div class="trow"><span class="tw"> </span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">UPS — Rack 1</span><span class="agent-tag">lx</span></div>
+        <div class="trow"><span class="tw"> └─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg><span class="nm">PDU — Stage</span><span class="agent-tag">lx</span></div>
+        <div class="tree-foot">Edges from discovery (switch topology) + 4 added by hand. <a href="#">Edit edges</a></div>
+      </div>
+
+      <div class="listing">
+        <div class="toolbar">
+          <input class="input" placeholder="Filter devices…">
+          <select class="select"><option>State: any</option></select>
+          <select class="select"><option>Agent: any</option></select>
+          <select class="select"><option>VLAN: any</option></select>
+          <select class="select"><option>Tag: any</option></select>
+          <span class="count-line">124 devices · 2 down · 3 unknown</span>
+          <span class="spacer"></span>
+          <button class="btn btn-secondary btn-sm">Reassign agent…</button>
+          <button class="btn btn-primary btn-sm">Add device</button>
+        </div>
+
+        <table class="data">
+          <thead><tr><th>Device</th><th>State</th><th>Address</th><th>Agent</th><th>Tags</th><th class="num">Monitors</th><th>30 d</th><th class="num">Last seen</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="dev">Stage Switch A</td>
+              <td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="stl">Down</span></span></td>
+              <td class="code">10.20.0.11</td><td class="code">av</td>
+              <td><span class="tag">network</span><span class="tag">stage</span></td>
+              <td class="num">1/4</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td>
+              <td class="code num">4 m ago</td>
+            </tr>
+            <tr>
+              <td class="dev">Wireless RX 07 <span class="suppressed-note">· suppressed by <a href="#">Stage Switch A</a></span></td>
+              <td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="stl">Unknown</span></span></td>
+              <td class="code">10.20.4.31</td><td class="code">av</td>
+              <td><span class="tag">wireless</span><span class="tag">stage</span></td>
+              <td class="num">2/2</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i class="u"></i></span></td>
+              <td class="code num">4 m ago</td>
+            </tr>
+            <tr>
+              <td class="dev">DSP Core</td>
+              <td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="stl">Suspect</span></span></td>
+              <td class="code">10.20.2.8</td><td class="code">av</td>
+              <td><span class="tag">audio</span><span class="tag">core</span></td>
+              <td class="num">3/3</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i></span></td>
+              <td class="code num">8 s ago</td>
+            </tr>
+            <tr>
+              <td class="dev">Projector — Main</td>
+              <td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td>
+              <td class="code">10.20.5.12</td><td class="code">av</td>
+              <td><span class="tag">video</span></td>
+              <td class="num">2/2</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></td>
+              <td class="code num">31 s ago</td>
+            </tr>
+            <tr>
+              <td class="dev">Camera PTZ 3</td>
+              <td><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="stl">Degraded</span></span></td>
+              <td class="code">10.20.6.14</td><td class="code">av</td>
+              <td><span class="tag">video</span><span class="tag">ptz</span></td>
+              <td class="num">1/1</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i></span></td>
+              <td class="code num">44 s ago</td>
+            </tr>
+            <tr>
+              <td class="dev">Amp rack — B <span class="reach">filtered — ACL?</span></td>
+              <td><span class="state st-maint"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--maint)" stroke-width="1.5"/><line x1="2" y1="8" x2="8" y2="2" stroke="var(--maint)" stroke-width="1.2"/></svg><span class="stl">Maintenance</span></span></td>
+              <td class="code">10.30.1.20</td><td class="code">lx</td>
+              <td><span class="tag">power</span></td>
+              <td class="num">1/1</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="m"></i><i class="m"></i><i></i><i></i><i></i><i class="m"></i></span></td>
+              <td class="code num">2 m ago</td>
+            </tr>
+            <tr>
+              <td class="dev">UPS — Rack 2</td>
+              <td><span class="state st-recovering"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg><span class="stl">Recovering</span></span></td>
+              <td class="code">10.30.1.6</td><td class="code">lx</td>
+              <td><span class="tag">power</span></td>
+              <td class="num">1/1</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i></span></td>
+              <td class="code num">3 s ago</td>
+            </tr>
+            <tr>
+              <td class="dev">Streaming encoder</td>
+              <td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td>
+              <td class="code">10.20.6.20</td><td class="code">av</td>
+              <td><span class="tag">video</span><span class="tag">stream</span></td>
+              <td class="num">2/2</td>
+              <td><span class="mini-strip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></td>
+              <td class="code num">12 s ago</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

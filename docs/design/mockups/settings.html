@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+
+  .content { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 73px); }
+  .scol { min-width: 0; }
+  .scol:first-child { border-right: 1px solid var(--hairline); }
+  .pad-sect { padding: 12px 16px 16px; border-bottom: 1px solid var(--hairline); }
+  .pad-sect > .lbl { display: block; margin-bottom: 10px; }
+  .eg { font-family: var(--font-mono); font-size: 11px; line-height: 1.9; color: var(--sub); }
+  .eg .cm { color: var(--faint); }
+  .eg .deny { color: var(--down); }
+  .krow { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; font-size: 12.5px; color: var(--sub); }
+  .krow b { color: var(--ink); font-weight: 550; }
+  .krow .code { font-family: var(--font-mono); font-size: 11px; }
+  .krow .meta { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+  .note-warn { display: flex; gap: 9px; padding: 9px 11px; border: 1px solid color-mix(in oklab, var(--warn) 35%, transparent); border-radius: 3px; background: color-mix(in oklab, var(--warn) 6%, transparent); font-size: 12px; color: var(--sub); line-height: 1.55; }
+  .note-warn b { color: var(--warn); }
+
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Settings</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+<div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html" class="active"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="scol">
+        <div class="sect"><span class="lbl">Users &amp; roles</span><span class="spacer"></span><button class="btn btn-ghost btn-sm">Invite</button></div>
+        <table class="data">
+          <thead><tr><th>User</th><th>Role</th><th>Can</th><th class="num">Last active</th></tr></thead>
+          <tbody>
+            <tr><td class="dev">jt</td><td class="code">admin</td><td style="color:var(--muted)">everything · audit-logged with diffs</td><td class="code num">now</td></tr>
+            <tr><td class="dev">sam</td><td class="code">author</td><td style="color:var(--muted)">flows, captures, packs — explicitly privileged</td><td class="code num">2 h</td></tr>
+            <tr><td class="dev">ops-wall</td><td class="code">viewer</td><td style="color:var(--muted)">status + history · no run captures</td><td class="code num">18 d</td></tr>
+          </tbody>
+        </table>
+
+        <div class="pad-sect">
+          <span class="lbl">Bounds — enforced ceilings, not suggestions</span>
+          <div class="krow"><b>Run wall clock</b><span class="code">30 s</span><span class="meta">ceiling 300 s</span></div>
+          <div class="krow"><b>Node executions / run</b><span class="code">500</span><span class="meta">ceiling 5 000</span></div>
+          <div class="krow"><b>Minimum interval</b><span class="code">5 s</span><span class="meta">below is admin-only</span></div>
+          <div class="krow"><b>Captured frame</b><span class="code">64 KB</span><span class="meta">truncate + flag</span></div>
+        </div>
+
+        <div class="pad-sect" style="border-bottom:none">
+          <span class="lbl">Retention</span>
+          <div class="krow"><b>Metrics</b><span class="code">full 14 d → 1 m rollup 13 mo → 1 h forever</span></div>
+          <div class="krow"><b>Runs</b><span class="code">90 d</span><span class="meta">captures: last 10 + suspect windows</span></div>
+          <div class="krow"><b>Uptime periods</b><span class="code">forever</span><span class="meta">they are tiny</span></div>
+        </div>
+      </div>
+
+      <div class="scol">
+        <div class="pad-sect">
+          <span class="lbl">Egress — default deny, site-wide floor</span>
+          <div class="eg">allow 10.0.0.0/8    tcp 22-9999, udp 161, icmp<br>
+allow 172.16.20.0/22 tcp 80,443<br>
+<span class="deny">deny  loopback · link-local · metadata · core · db</span> <span class="cm"># hard — includes IPv6 + mapped forms, not editable</span></div>
+          <p style="font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5">Each agent holds its own
+          stricter policy locally — Core can propose, never apply (I7).</p>
+        </div>
+
+        <div class="pad-sect">
+          <span class="lbl">Self-health</span>
+          <div class="krow"><b>Scheduler lag</b><span class="code" style="color:var(--up)">p99 41 ms</span></div>
+          <div class="krow"><b>Metric series</b><span class="code">4 812</span><span class="meta">+2% this week · cap 50 k</span></div>
+          <div class="krow"><b>Sandbox terminations</b><span class="code">0</span><span class="meta">30 d</span></div>
+          <div class="krow"><b>Ingest dedupe hits</b><span class="code">312</span><span class="meta">replays fenced by slot — normal</span></div>
+        </div>
+
+        <div class="pad-sect" style="border-bottom:none">
+          <span class="lbl">Backup</span>
+          <div class="krow"><b>Database</b><span class="code" style="color:var(--up)">✓ nightly · verified 02:14</span></div>
+          <div class="note-warn"><span>⚠</span><span><b>Master key is separate from the database backup</b> —
+          keep it that way. Same backup = decorative encryption; lost key = unrecoverable credentials.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

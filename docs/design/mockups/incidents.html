@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Incidents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .content { display: grid; grid-template-columns: 1fr 420px; min-height: calc(100vh - 73px); }
+  .list { border-right: 1px solid var(--hairline); min-width: 0; }
+  .toolbar { display: flex; align-items: center; gap: 4px; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+  .tab { font-size: 12.5px; color: var(--muted); padding: 4px 10px; border-radius: 3px; cursor: pointer; }
+  .tab.on { color: var(--ink); background: var(--bg2); }
+  .tab .n { font-family: var(--font-mono); font-size: 10.5px; margin-left: 5px; color: var(--down); }
+  .toolbar .spacer { flex: 1; }
+
+  .irow { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; padding: 10px 16px 11px; border-bottom: 1px solid var(--hairline); cursor: pointer; }
+  .irow:hover { background: var(--bg-hover); }
+  .irow.sel { background: var(--bg2); }
+  .irow .glyph { width: 11px; height: 11px; margin-top: 3px; }
+  .irow .t { font-size: 13px; font-weight: 550; color: var(--ink); }
+  .irow .t .cls { margin-left: 8px; }
+  .irow .m { grid-column: 2; font-size: 11.5px; color: var(--muted); }
+  .irow .m b { color: var(--sub); font-weight: 500; }
+  .irow .right { grid-column: 3; grid-row: 1 / span 2; text-align: right; display: grid; gap: 3px; align-content: start; }
+  .irow .dur { font-family: var(--font-mono); font-size: 13px; color: var(--down); font-variant-numeric: tabular-nums; }
+  .irow .dur.ok { color: var(--up); }
+  .irow .ack { font-size: 10.5px; color: var(--muted); }
+  .group-lbl { padding: 12px 16px 6px; border-bottom: 1px solid var(--hairline); background: var(--bg-th); }
+
+  /* detail rail */
+  .rail { min-width: 0; overflow-y: auto; }
+  .rail-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--hairline); }
+  .rail-head .row1 { display: flex; align-items: center; gap: 10px; }
+  .rail-head .t { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .rail-head .meta { margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+  .rail-head .meta b { color: var(--sub); font-weight: 500; }
+  .rail-head .acts { display: flex; gap: 8px; margin-top: 11px; }
+  .rail-sect { padding: 12px 16px 14px; border-bottom: 1px solid var(--hairline); }
+  .rail-sect > .lbl { display: block; margin-bottom: 9px; }
+
+  .facts { display: grid; grid-template-columns: 92px 1fr; gap: 6px 12px; font-size: 12px; }
+  .facts .k { color: var(--muted); }
+  .facts .v { color: var(--sub); }
+  .facts .v .mono { font-size: 11px; }
+  .facts .v.route b { color: var(--ink); font-weight: 550; }
+
+  .tl { display: grid; gap: 0; }
+  .tl-row { display: flex; gap: 12px; padding: 4px 0; font-size: 12px; }
+  .tl-row .ts { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); width: 56px; flex: none; padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .tl-row .ev { color: var(--sub); line-height: 1.45; }
+  .tl-row .ev b { color: var(--ink); font-weight: 550; }
+  .tl-row .ev .down2 { color: var(--down); font-weight: 600; }
+  .tl-row .ev .warn3 { color: var(--warn); font-weight: 600; }
+  .tl-row .ev .dim2 { color: var(--muted); }
+  .tl-row .ev a { font-size: 11.5px; }
+
+  .supp-tree .srow { display: flex; align-items: center; gap: 8px; height: 25px; font-size: 12px; color: var(--muted); }
+  .supp-tree .srow .tw { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); white-space: pre; }
+  .supp-tree .srow .glyph { width: 8px; height: 8px; }
+  .supp-tree .srow .st2 { margin-left: auto; font-family: var(--font-mono); font-size: 10px; }
+  .supp-tree .srow .down3 { color: var(--down); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Incidents</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html" class="active"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="list">
+        <div class="toolbar">
+          <span class="tab on">Open<span class="n">2</span></span>
+          <span class="tab">Acknowledged</span>
+          <span class="tab">Resolved today</span>
+          <span class="tab">All</span>
+          <span class="spacer"></span>
+          <select class="select" style="width:auto"><option>Severity: any</option></select>
+          <select class="select" style="width:auto"><option>Group: site</option></select>
+        </div>
+
+        <div class="irow sel">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+          <div>
+            <div class="t">Stage Switch A — reachability lost<span class="cls badge badge-err">timeout</span></div>
+            <div class="m"><b>Interface errors</b> · 3 consecutive failures + 60 s dwell · <b>14 dependents suppressed</b> · routed to <b>AV on-call</b></div>
+          </div>
+          <div class="right"><span class="dur">4:12</span><span class="ack">unacknowledged</span></div>
+        </div>
+
+        <div class="irow">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+          <div>
+            <div class="t">Projector — West — lamp fault<span class="cls badge badge-err">assertion</span></div>
+            <div class="m"><b>Status + Lamp</b> · ERST digit 3 = 1 · routed to <b>AV on-call</b></div>
+          </div>
+          <div class="right"><span class="dur">11:03</span><span class="ack">ack — jt · 18:39</span></div>
+        </div>
+
+        <div class="irow">
+          <svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg>
+          <div>
+            <div class="t">DSP Core — clock drift<span class="cls badge badge-warn">suspect</span></div>
+            <div class="m"><b>Clock sync</b> · 1 of 3 failures · polling every 10 s · no page yet</div>
+          </div>
+          <div class="right"><span class="dur" style="color:var(--warn)">0:41</span><span class="ack">pre-alert state</span></div>
+        </div>
+
+        <div class="group-lbl"><span class="lbl">Resolved earlier today</span></div>
+
+        <div class="irow" style="opacity:.75">
+          <svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg>
+          <div>
+            <div class="t" style="color:var(--sub)">Wireless RX 03 — RF floor<span class="cls badge badge-warn">assertion</span></div>
+            <div class="m">14:02 – 14:31 · flapping detected, one summary sent · resolved on its own</div>
+          </div>
+          <div class="right"><span class="dur ok">29:14</span><span class="ack">resolved</span></div>
+        </div>
+
+        <div class="irow" style="opacity:.75">
+          <svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg>
+          <div>
+            <div class="t" style="color:var(--sub)">Audio controller — API errors<span class="cls badge badge-warn">protocol</span></div>
+            <div class="m">11:20 – 11:24 · <b>routed to flow author</b>, not on-call — device answered, we misread it · fixed in flow v3</div>
+          </div>
+          <div class="right"><span class="dur ok">3:55</span><span class="ack">resolved — flow fix</span></div>
+        </div>
+      </div>
+
+      <!-- detail -->
+      <div class="rail">
+        <div class="rail-head">
+          <div class="row1">
+            <span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="stl">Down</span></span>
+            <span class="t">Stage Switch A — reachability lost</span>
+          </div>
+          <div class="meta">INC-0219 · <b>Interface errors</b> on <b>Stage Switch A</b> · error class <span class="badge badge-err">timeout</span> → route <b>AV on-call</b></div>
+          <div class="acts">
+            <button class="btn btn-primary btn-sm">Acknowledge</button>
+            <button class="btn btn-secondary btn-sm">Silence device 1 h…</button>
+            <button class="btn btn-ghost btn-sm">Open monitor →</button>
+          </div>
+        </div>
+
+        <div class="rail-sect">
+          <span class="lbl">Facts</span>
+          <div class="facts">
+            <span class="k">Went down</span><span class="v">18:37:55 <span class="mono dim2">(first failure 18:36:55)</span></span>
+            <span class="k">Duration</span><span class="v mono">4 m 12 s</span>
+            <span class="k">Debounce</span><span class="v">3 consecutive failures <b>and</b> 60 s dwell — both met</span>
+            <span class="k">Suppressing</span><span class="v">14 devices behind this switch</span>
+            <span class="k">Notified</span><span class="v">#av-oncall · 18:38:00 · <b>one grouped message</b></span>
+            <span class="k">Escalation</span><span class="v">→ #av-managers if unacked at 18:53</span>
+          </div>
+        </div>
+
+        <div class="rail-sect">
+          <span class="lbl">Timeline</span>
+          <div class="tl">
+            <div class="tl-row"><span class="ts">18:36:55</span><span class="ev">run failed — <b>timeout 5 s</b> · state <span class="warn3">suspect</span> · capture kept, polling every 10 s</span></div>
+            <div class="tl-row"><span class="ts">18:37:05</span><span class="ev">2nd failure · <span class="dim2">connect timed out at socket, deadline honoured</span></span></div>
+            <div class="tl-row"><span class="ts">18:37:15</span><span class="ev">3rd failure — count met, dwell running</span></div>
+            <div class="tl-row"><span class="ts">18:37:55</span><span class="ev">dwell met → <span class="down2">down</span> · transition recorded on run row</span></div>
+            <div class="tl-row"><span class="ts">18:37:56</span><span class="ev">grace 60 s: children re-evaluated → <b>14 suppressed</b> as dependents</span></div>
+            <div class="tl-row"><span class="ts">18:38:00</span><span class="ev">notified <b>#av-oncall</b> — one message, dependents listed inside · <a href="#">view message</a></span></div>
+            <div class="tl-row"><span class="ts">18:40:11</span><span class="ev"><span class="dim2">14 child alerts evaluated — all suppressed by this incident, recorded not discarded</span></span></div>
+          </div>
+        </div>
+
+        <div class="rail-sect supp-tree">
+          <span class="lbl">Suppressed by this incident — 14</span>
+          <div class="srow"><span class="tw">├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg>Wireless RX 07<span class="st2">unknown</span></div>
+          <div class="srow"><span class="tw">├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg>Antenna combiner<span class="st2">unknown</span></div>
+          <div class="srow"><span class="tw">├─</span><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>Stagebox 2<span class="st2 down3">was already down</span></div>
+          <div class="srow"><span class="tw">├─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg>IEM TX rack<span class="st2">unknown</span></div>
+          <div class="srow"><span class="tw">└─</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><a href="#">10 more…</a></div>
+          <p style="margin-top:9px; font-size:11px; color:var(--muted); line-height:1.5">On recovery: one summary — recovered dependents rolled up, stragglers called out.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

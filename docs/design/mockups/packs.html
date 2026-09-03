@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Packs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+
+  .content { display: grid; grid-template-columns: 1fr 400px; min-height: calc(100vh - 73px); }
+  .listing { border-right: 1px solid var(--hairline); min-width: 0; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+  .toolbar .spacer { flex: 1; }
+  tr.sel-row td { background: var(--bg2); }
+  .fix-ok { color: var(--up); } .fix-bad { color: var(--down); }
+  .unv { color: var(--warn); font-weight: 600; }
+  .rail { min-width: 0; }
+  .rail-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--hairline); }
+  .rail-head .t { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .rail-head .meta { margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+  .rail-head .acts { display: flex; gap: 8px; margin-top: 11px; }
+  .rail-sect { padding: 12px 16px 14px; border-bottom: 1px solid var(--hairline); }
+  .rail-sect > .lbl { display: block; margin-bottom: 9px; }
+  .rv { display: flex; gap: 10px; padding: 3px 0; font-size: 12px; color: var(--sub); }
+  .rv .k { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); width: 88px; flex: none; }
+  .rv b { color: var(--ink); font-weight: 550; }
+  .warn-box { display: flex; gap: 9px; padding: 9px 11px; border: 1px solid color-mix(in oklab, var(--warn) 35%, transparent); border-radius: 3px; background: color-mix(in oklab, var(--warn) 6%, transparent); font-size: 12px; color: var(--sub); line-height: 1.5; }
+  .warn-box b { color: var(--warn); }
+
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Packs</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+<div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html" class="active"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="listing">
+        <div class="toolbar">
+          <input class="input" placeholder="Filter packs…" style="width:200px">
+          <span class="statline dim mono" style="font-size:11px">5 installed · fixtures run in CI on every platform update</span>
+          <span class="spacer"></span>
+          <button class="btn btn-secondary btn-sm">Import file…</button>
+          <button class="btn btn-primary btn-sm">Browse index</button>
+        </div>
+
+        <table class="data">
+          <thead><tr><th>Pack</th><th>Version</th><th>Signed</th><th class="num">Flows</th><th class="num">Fixtures</th><th>Egress scope</th><th class="num">Update</th></tr></thead>
+          <tbody>
+            <tr class="sel-row">
+              <td class="dev">AV Wireless Pack</td>
+              <td class="code">1.2</td><td class="code fix-ok">✔ verified</td>
+              <td class="num">4</td><td class="code num fix-ok">6/6 ✓</td>
+              <td class="code">tcp 2202 · site</td>
+              <td class="code num"><a href="#">1.3 →</a></td>
+            </tr>
+            <tr>
+              <td class="dev">SNMP Switch</td>
+              <td class="code">2.0</td><td class="code fix-ok">✔ verified</td>
+              <td class="num">3</td><td class="code num fix-ok">9/9 ✓</td>
+              <td class="code">udp 161 · site</td>
+              <td class="code num">—</td>
+            </tr>
+            <tr>
+              <td class="dev">Projector Control</td>
+              <td class="code">1.2</td><td class="code fix-ok">✔ verified</td>
+              <td class="num">2</td><td class="code num fix-bad">5/6 ✕</td>
+              <td class="code">tcp 4352 · site</td>
+              <td class="code num">—</td>
+            </tr>
+            <tr>
+              <td class="dev">Network Basics</td>
+              <td class="code">1.0</td><td class="code fix-ok">✔ verified</td>
+              <td class="num">5</td><td class="code num fix-ok">8/8 ✓</td>
+              <td class="code">icmp · http · dns</td>
+              <td class="code num">—</td>
+            </tr>
+            <tr>
+              <td class="dev">Venue Custom</td>
+              <td class="code">0.4</td><td class="code unv">unsigned — local</td>
+              <td class="num">6</td><td class="code num fix-ok">3/3 ✓</td>
+              <td class="code">tcp 23,80 · VLAN 20</td>
+              <td class="code num">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="sect" style="border-top:1px solid var(--hairline)">
+          <span class="lbl">Fixture failure — Projector Control</span>
+          <span class="statline dim" style="font-size:11.5px">greeting-auth.fix stopped matching after firmware 2.1 — flow “Status + Lamp” draft already tolerates it</span>
+          <span class="spacer"></span>
+          <a href="builder.html" style="font-size:11.5px">Open draft →</a>
+        </div>
+      </div>
+
+      <div class="rail">
+        <div class="rail-head">
+          <span class="t">AV Wireless Pack — update 1.2 → 1.3</span>
+          <div class="meta">signed · author av-community · min platform 0.9</div>
+          <div class="acts">
+            <button class="btn btn-primary btn-sm">Review &amp; update</button>
+            <button class="btn btn-ghost btn-sm">Export</button>
+            <button class="btn btn-danger btn-sm">Remove…</button>
+          </div>
+        </div>
+
+        <div class="rail-sect">
+          <span class="lbl">Install review — what 1.3 brings</span>
+          <div class="rv"><span class="k">flows</span><span><b>+1</b> Antenna health · 2 changed (semantic diff per flow)</span></div>
+          <div class="rv"><span class="k">fixtures</span><span><b>+2</b> recorded on firmware 3.0</span></div>
+          <div class="rv"><span class="k">egress</span><span>unchanged — <b>tcp 2202 within site</b></span></div>
+          <div class="rv"><span class="k">credentials</span><span>names only: <b>rx_admin</b> — values never ship in a Pack</span></div>
+          <div class="rv"><span class="k">dashboards</span><span>1 provisioned board updated</span></div>
+        </div>
+
+        <div class="rail-sect">
+          <span class="lbl">Write-capable nodes</span>
+          <div class="warn-box"><span>⚠</span><span><b>Contains 1 write-capable Send</b> (enables metering).
+          Stays off unless an admin enables it, per agent, individually. Audit-logged per execution.</span></div>
+        </div>
+
+        <div class="rail-sect">
+          <span class="lbl">Your local changes</span>
+          <div class="rv"><span class="k">forked</span><span><b>Channel Health</b> — detached at 1.1. Updating prompts a merge, never overwrites.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

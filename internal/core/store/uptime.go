@@ -8,10 +8,19 @@ import (
 // enum in migration 0001.
 type State string
 
+// These are the alert state machine's states (spec §11), and they are exactly
+// the monitor_state enum in migration 0001 — TestState_MatchesTheDatabaseEnum
+// keeps the two from drifting.
+//
+// Note what is absent: `degraded`. That is a *run* status, not an alert state,
+// so a persistently degraded monitor currently holds an `up` period and counts
+// as fully up in uptime. Whether the alert state machine should gain a
+// degraded state is an M5 question — see docs/ROADMAP.md — and adding the
+// constant here before the enum has it would only produce writes the database
+// rejects.
 const (
 	StateUnknown    State = "unknown"
 	StateUp         State = "up"
-	StateDegraded   State = "degraded"
 	StateDown       State = "down"
 	StateSuspect    State = "suspect"
 	StateRecovering State = "recovering"

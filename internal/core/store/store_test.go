@@ -101,7 +101,7 @@ func sampleRun(monitorID, flowVersionID string, slot time.Time) Run {
 		StartedAt:     slot.Add(20 * time.Millisecond),
 		Duration:      150 * time.Millisecond,
 		FlowVersionID: flowVersionID,
-		Status:        StateUp,
+		Status:        RunStatusUp,
 		Outcome:       OutcomeOK,
 	}
 }
@@ -200,7 +200,7 @@ func TestInsertRun_RoundTripsItsFields(t *testing.T) {
 		Duration:         1234 * time.Millisecond,
 		FlowVersionID:    fv,
 		Attempt:          2,
-		Status:           StateDown,
+		Status:           RunStatusDown,
 		Outcome:          OutcomeFailed,
 		ErrorClass:       "timeout",
 		Message:          "device did not answer",
@@ -385,6 +385,87 @@ func TestLoadMigrations_OrdersNumerically(t *testing.T) {
 	for i := 1; i < len(ms); i++ {
 		if ms[i].Version <= ms[i-1].Version {
 			t.Fatalf("migrations are not in ascending order: %d then %d", ms[i-1].Version, ms[i].Version)
+		}
+	}
+}
+
+// TestRunStatus_MatchesTheDatabaseEnum is the same guard for run_status, which
+// is a different set from monitor_state: a run can be degraded, an alert state
+// cannot; an alert state can be suspect, a run cannot.
+func TestRunStatus_MatchesTheDatabaseEnum(t *testing.T) {
+	s, _, ctx := testStore(t)
+
+	rows, err := s.pool.Query(ctx, `SELECT unnest(enum_range(NULL::run_status))::text`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	inDB := map[string]bool{}
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		inDB[v] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	inGo := map[string]bool{}
+	for _, rs := range []RunStatus{RunStatusUp, RunStatusDegraded, RunStatusDown, RunStatusUnknown} {
+		inGo[string(rs)] = true
+		if !inDB[string(rs)] {
+			t.Errorf("store.RunStatus %q is not a run_status value", rs)
+		}
+	}
+	for v := range inDB {
+		if !inGo[v] {
+			t.Errorf("run_status has %q but store declares no constant for it", v)
+		}
+	}
+}
+
+// TestState_MatchesTheDatabaseEnum pins the Go constants to the monitor_state
+// enum.
+//
+// They drifted once already: store.State carried a `degraded` value the enum
+// has never had, and every write of it would have been rejected by the
+// database at runtime with an error no UI could explain. A mismatch in this
+// direction is invisible until the exact state that is missing occurs, which
+// is precisely when nobody wants to be debugging it.
+func TestState_MatchesTheDatabaseEnum(t *testing.T) {
+	s, _, ctx := testStore(t)
+
+	rows, err := s.pool.Query(ctx, `SELECT unnest(enum_range(NULL::monitor_state))::text`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	inDB := map[string]bool{}
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		inDB[v] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	inGo := map[string]bool{}
+	for _, st := range []State{StateUnknown, StateUp, StateDown, StateSuspect, StateRecovering} {
+		inGo[string(st)] = true
+		if !inDB[string(st)] {
+			t.Errorf("store.State %q is not a monitor_state value; writing it would be rejected by the database", st)
+		}
+	}
+	for v := range inDB {
+		if !inGo[v] {
+			t.Errorf("monitor_state has %q but store declares no constant for it; periods in that state would be unreadable", v)
 		}
 	}
 }

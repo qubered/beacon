@@ -189,16 +189,18 @@ func TestUptime_NoDataIsDistinctFromZero(t *testing.T) {
 	}
 }
 
-// TestUptime_DegradedIsNotUp. Degraded is a state in its own right, not a
-// shade of up: counting it as uptime would hide exactly the partial failures
-// this product exists to surface.
-func TestUptime_DegradedIsNotUp(t *testing.T) {
-	periods := []StatePeriod{
-		{State: StateUp, From: hr(0), To: hr(12)},
-		{State: StateDegraded, From: hr(12), To: hr(24)},
+// TestUptime_OnlyUpCountsAsUp. Every state other than up — suspect,
+// recovering, down, unknown — is time the monitor was not confirmed healthy,
+// and crediting any of them would inflate the number people make decisions on.
+func TestUptime_OnlyUpCountsAsUp(t *testing.T) {
+	for _, notUp := range []State{StateDown, StateSuspect, StateRecovering, StateUnknown} {
+		periods := []StatePeriod{
+			{State: StateUp, From: hr(0), To: hr(12)},
+			{State: notUp, From: hr(12), To: hr(24)},
+		}
+		u := ComputeUptime(periods, hr(0), hr(24), hr(24))
+		closeTo(t, u.Raw, 0.5, "raw uptime with "+string(notUp))
 	}
-	u := ComputeUptime(periods, hr(0), hr(24), hr(24))
-	closeTo(t, u.Raw, 0.5, "raw uptime")
 }
 
 func TestUptime_EmptyOrInvertedWindow(t *testing.T) {

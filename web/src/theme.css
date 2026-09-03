@@ -1,0 +1,65 @@
+/* The status wall is a screen people leave open in a rack room, often on a
+   panel that is either very bright or nearly dark. So the palette is defined
+   once as tokens and redefined for dark, rather than hard-coded per component
+   — a component that paints a dark colour on a transparent body is invisible
+   to half its viewers, which is a real failure for a screen whose whole job is
+   to be readable at a glance from across the room. */
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f6f8fa;
+  --text: #1f2328;
+  --text-muted: #57606a;
+  --border: #d0d7de;
+  --border-subtle: #eaeef2;
+  --link: #0969da;
+
+  /* State colours. Degraded is a state in its own right, not a shade of down,
+     and it gets its own hue (spec §15). Unknown is grey rather than red:
+     "we could not tell" is not a fault, and colouring it as one trains people
+     to ignore red. */
+  --state-up: #1a7f37;
+  --state-degraded: #bf8700;
+  --state-down: #cf222e;
+  --state-suspect: #bc4c00;
+  --state-recovering: #0969da;
+  --state-unknown: #6e7781;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-muted: #10151b;
+    --text: #e6edf3;
+    --text-muted: #9198a1;
+    --border: #30363d;
+    --border-subtle: #21262d;
+    --link: #4493f8;
+
+    /* Lifted for contrast against a dark surface: the light-mode greens and
+       reds fail WCAG AA on #161b22, and a status colour nobody can read is
+       worse than no colour at all. */
+    --state-up: #3fb950;
+    --state-degraded: #d29922;
+    --state-down: #f85149;
+    --state-suspect: #db6d28;
+    --state-recovering: #4493f8;
+    --state-unknown: #8b949e;
+  }
+}
+
+/* The body paints an explicit background. Leaving it transparent means the
+   page borrows whatever is behind it, which is how the light-mode palette
+   ended up on a black page. */
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}

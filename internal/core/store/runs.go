@@ -12,6 +12,24 @@ import (
 	"github.com/qubered/beacon/internal/site"
 )
 
+// RunStatus is what a single run reported, and it is deliberately a different
+// set from State.
+//
+// A *run* can be degraded — the device answered and something was out of range
+// — while the alert *state machine* has no degraded state and instead moves
+// up → suspect → down → recovering. Sharing one Go type between the two would
+// let a suspect status reach a run row, or a degraded state reach a period,
+// and either is rejected by the database at write time with an error no UI can
+// explain. TestRunStatus_MatchesTheDatabaseEnum keeps this honest.
+type RunStatus string
+
+const (
+	RunStatusUp       RunStatus = "up"
+	RunStatusDegraded RunStatus = "degraded"
+	RunStatusDown     RunStatus = "down"
+	RunStatusUnknown  RunStatus = "unknown"
+)
+
 // Outcome is how a run ended, distinct from the status it reported. It mirrors
 // the run_outcome enum in migration 0002.
 //
@@ -45,7 +63,7 @@ type Run struct {
 	FlowVersionID string
 	Attempt       int
 
-	Status     State
+	Status     RunStatus
 	Outcome    Outcome
 	ErrorClass string
 	Message    string

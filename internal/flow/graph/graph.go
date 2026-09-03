@@ -62,6 +62,13 @@ type Edge struct {
 type Graph struct {
 	Nodes []Node `json:"nodes"`
 	Edges []Edge `json:"edges"`
+
+	// Defaults are the flow author's default variable values, the base of the
+	// precedence chain in spec §6.2: monitor vars override device vars
+	// override these. They live on the graph rather than on the monitor
+	// because they are a property of the flow — the author's statement of what
+	// the flow assumes when a device says nothing.
+	Defaults map[string]any `json:"defaults,omitempty"`
 }
 
 // PortTypeFunc resolves the type of one named port on one node, given the

@@ -188,7 +188,7 @@ than by a test, and both were in code that had tests passing over it.
 
 ---
 
-## M3 — Monitors, scheduling, storage, and something to look at
+## M3 — Monitors, scheduling, storage, and something to look at ✅ shipped
 
 **Goal:** monitors run on a schedule, results persist, uptime is computable, and
 there is a screen showing it.
@@ -208,12 +208,52 @@ Ships:
   partitions. Captures dropped at write time, never written and pruned later.
 - Uptime as time-weighted from state periods, reported **both raw and excluding
   maintenance** (D23).
-- Web tier bootstrap: status wall and device list, read-only.
+- Web tier bootstrap: status wall and device list, read-only. Every tile shows
+  its last-run age and flags itself stale against its own interval, because a
+  green tile whose agent stopped reporting is indistinguishable from a fresh one
+  otherwise — the distinction spec §12 makes between "the check failed" and
+  "the platform stopped checking".
 
 **Exit gate:** 400 monitors on a 60s interval spread across the minute rather
 than firing in one second. A monitor that takes 28s to time out still lands on the
 original grid. A 10-minute stop produces one recorded gap, not 120 queued runs.
 Changing an interval does not re-weight yesterday's uptime.
+
+**What actually happened:** the risk called before starting was that time-shaped
+tests pass by accident — a fake clock only advances when the scheduler asks it
+to, so it will happily agree with a scheduler that compounds lateness. The
+answer was to make the scheduling and uptime arithmetic **pure functions** and
+test them on real numbers, leaving only the waiting in a thin `Ticker`. That
+worked, and it was worth confirming rather than assuming: deliberately breaking
+the code seven ways (advance from now, replay the backlog, constant phase,
+invert the shed order, make `Peek` destructive, credit unknown time as up, run
+an open period to the window end instead of to now) had each mutation caught by
+the right test with a message naming the actual failure.
+
+Three real bugs, all found the same way — by wiring a piece to the thing it
+actually talks to.
+
+`Ticker.Due` returned the *stale* pending slot, so a run after a ten-minute
+outage would have been stamped ten minutes in the past. That is a backdated run
+landing in history at a time nothing was observed, which is exactly what
+"catch-up snaps, it does not replay" exists to prevent — the snap was right and
+the label was wrong.
+
+Then two enum mismatches that only a live database could surface.
+`store.State` carried a `degraded` value `monitor_state` has never had, and
+`Run.Status` was typed as `State` when `monitor_runs.status` is `run_status` —
+a different set. Both would have been rejected at write time with an error no
+UI could explain, and only for the specific state that is missing, which is
+precisely when nobody wants to be debugging it. There are now tests asserting
+the Go constants and the Postgres enums agree in both directions.
+
+**And a question this surfaced that M5 has to answer:** the alert state machine
+has no `degraded` state, so a persistently degraded monitor holds an `up`
+period and counts as fully up in uptime. Spec §15 says degraded is a state in
+its own right that the UI colours distinctly and alerting routes separately.
+Either the state machine gains a degraded state, or uptime needs a third
+figure. Deciding it is M5's, not M3's — but the code no longer pretends the
+option exists.
 
 ---
 

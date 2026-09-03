@@ -50,6 +50,18 @@ capability declaration an agent sends to Core, so a new node type or an
 incompatible config change needs its `ConfigSchemaVersion` bumped — otherwise an
 old agent accepts an assignment it cannot run.
 
+## Building UI
+
+The design system is a contract like the spec. [docs/design/design.md](docs/design/design.md)
+owns the foundations — tokens, type, state grammar, the component kit.
+[docs/design/playbook.md](docs/design/playbook.md) owns each surface's anatomy,
+states, and rules. [docs/design/mockups/](docs/design/mockups/) is the
+**normative reference**: `beacon.css` is the token sheet `web/` ports verbatim,
+`index.html` maps every surface to its mockup, and a real surface is built to
+match its mockup — same shell, same anatomy, same copy voice. When
+implementation needs to diverge, change the mockup and the docs first, then the
+code. Never the reverse, and never silently.
+
 ## Conventions
 
 - Every package has a `doc.go` stating its responsibility and the spec sections

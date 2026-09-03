@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Status Wall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  /* The wall lives on a rack-room screen: no chrome, big type, and it is
+     QUIET — normal is dim graphite; only abnormal state earns brightness. */
+  body { overflow: hidden; }
+  .wall { display: grid; grid-template-rows: 64px auto 1fr 40px; height: 100vh; }
+
+  .wall-top { display: flex; align-items: baseline; gap: 24px; padding: 0 28px; border-bottom: 1px solid var(--hairline); align-items: center; }
+  .wall-top .mark { font-variation-settings: "wdth" 78; font-weight: 650; font-size: 15px; letter-spacing: .16em; color: var(--sub); }
+  .wall-top .site { font-size: 20px; font-weight: 600; color: var(--ink); }
+  .wall-top .sum { display: flex; gap: 8px; align-items: baseline; font-size: 14px; color: var(--sub); }
+  .wall-top .sum b { font-family: var(--font-mono); font-size: 17px; color: var(--ink); font-weight: 600; }
+  .wall-top .sum .bad { color: var(--down); }
+  .wall-top .sum .warn2 { color: var(--warn); }
+  .wall-top .sum .sep { color: var(--faint); margin: 0 8px; }
+  .wall-top .spacer { flex: 1; }
+  .wall-top .clock { font-family: var(--font-mono); font-size: 30px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+  /* incident band — the only loud thing on the wall */
+  .band { border-bottom: 1px solid var(--hairline); }
+  .inc {
+    display: flex; align-items: center; gap: 18px; padding: 0 28px; height: 58px;
+  }
+  .inc + .inc { border-top: 1px solid var(--hairline); }
+  .inc .glyph { width: 16px; height: 16px; flex: none; }
+  .inc .who { font-size: 18px; font-weight: 650; letter-spacing: .01em; }
+  .inc .what { font-size: 14px; color: var(--sub); }
+  .inc .spacer { flex: 1; }
+  .inc .for { font-family: var(--font-mono); font-size: 19px; font-variant-numeric: tabular-nums; }
+  .inc.down { background: color-mix(in oklab, var(--down) 10%, var(--bg0)); }
+  .inc.down .who, .inc.down .for { color: var(--down); }
+  .inc.suspect .who, .inc.suspect .for { color: var(--warn); }
+  .inc .supp { font-size: 13px; color: var(--muted); }
+  .inc.pulse { animation: incpulse 2.4s ease-in-out infinite; }
+  @keyframes incpulse { 50% { background: color-mix(in oklab, var(--down) 16%, var(--bg0)); } }
+  @media (prefers-reduced-motion: reduce) { .inc.pulse { animation: none; } }
+
+  /* groups: rack-strip columns, rows + hairlines — no cards */
+  .groups { display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden; }
+  .group { border-right: 1px solid var(--hairline); min-width: 0; display: flex; flex-direction: column; }
+  .group:last-child { border-right: none; }
+  .group > .lbl {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px 8px; font-size: 11px;
+  }
+  .group > .lbl .n { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); letter-spacing: 0; }
+  .dev {
+    display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 18px;
+    border-top: 1px solid var(--hairline); font-size: 13.5px; color: var(--sub); min-width: 0;
+  }
+  .dev .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dev .spacer { flex: 1; }
+  .dev .glyph { width: 10px; height: 10px; flex: none; }
+  .dev .val { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dev.is-down { background: color-mix(in oklab, var(--down) 9%, var(--bg0)); color: var(--ink); }
+  .dev.is-down .val { color: var(--down); font-weight: 600; }
+  .dev.is-suspect .val { color: var(--warn); }
+  .dev.is-unknown { color: var(--muted); }
+  .dev.is-unknown .nm { text-decoration: none; }
+  .dev.is-maint .val { color: var(--maint); }
+
+  /* the shell's status bar, scaled for distance reading */
+  .statusbar.wall-status { padding: 0 28px; gap: 20px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="wall">
+
+  <div class="wall-top">
+    <span class="mark">BEACON</span>
+    <span class="site">Main Hall</span>
+    <span class="sum">
+      <b>118</b> of <b>124</b> up
+      <span class="sep">·</span><b class="bad">2</b> down
+      <span class="sep">·</span><b class="warn2">1</b> suspect
+      <span class="sep">·</span><b>3</b> unknown
+    </span>
+    <span class="spacer"></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="band">
+    <div class="inc down pulse">
+      <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+      <span class="who">Stage Switch A</span>
+      <span class="what">timeout · port 14 uplink · 14 dependents suppressed</span>
+      <span class="spacer"></span>
+      <span class="supp">unacknowledged</span>
+      <span class="for">DOWN 4:12</span>
+    </div>
+    <div class="inc down">
+      <svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+      <span class="who">Projector — West</span>
+      <span class="what">assertion · lamp fault (ERST d3)</span>
+      <span class="spacer"></span>
+      <span class="supp">ack — jt · 18:39</span>
+      <span class="for">DOWN 11:03</span>
+    </div>
+    <div class="inc suspect">
+      <svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg>
+      <span class="who">DSP Core</span>
+      <span class="what">clock sync assertion · 1 of 3 failures · polling faster</span>
+      <span class="spacer"></span>
+      <span class="for">SUSPECT 0:41</span>
+    </div>
+  </div>
+
+  <div class="groups">
+    <div class="group">
+      <span class="lbl">Stage West <span class="n">31</span></span>
+      <div class="dev"><span class="nm">Wireless RX 01</span><span class="spacer"></span><span class="val">-58 dBm</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Wireless RX 02</span><span class="spacer"></span><span class="val">-61 dBm</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Wireless RX 03</span><span class="spacer"></span><span class="val">-55 dBm</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev is-suspect"><span class="nm">DSP Core</span><span class="spacer"></span><span class="val">+41 ppm</span><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg></div>
+      <div class="dev"><span class="nm">Mixer — Monitor</span><span class="spacer"></span><span class="val">ok</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Stagebox 1</span><span class="spacer"></span><span class="val">48 ch</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Stagebox 2</span><span class="spacer"></span><span class="val">48 ch</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">IEM TX rack</span><span class="spacer"></span><span class="val">6/6</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+    </div>
+
+    <div class="group">
+      <span class="lbl">Video <span class="n">18</span></span>
+      <div class="dev is-down"><span class="nm">Projector — West</span><span class="spacer"></span><span class="val">LAMP</span><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg></div>
+      <div class="dev"><span class="nm">Projector — Main</span><span class="spacer"></span><span class="val">2 841 h</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Projector — East</span><span class="spacer"></span><span class="val">1 204 h</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Camera PTZ 1</span><span class="spacer"></span><span class="val">12 Mb/s</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Camera PTZ 2</span><span class="spacer"></span><span class="val">12 Mb/s</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Camera PTZ 3</span><span class="spacer"></span><span class="val">9 Mb/s</span><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg></div>
+      <div class="dev"><span class="nm">Matrix 16×16</span><span class="spacer"></span><span class="val">ok</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Streaming encoder</span><span class="spacer"></span><span class="val">6.2 Mb/s</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+    </div>
+
+    <div class="group">
+      <span class="lbl">Network <span class="n">22</span></span>
+      <div class="dev is-down"><span class="nm">Stage Switch A</span><span class="spacer"></span><span class="val">TIMEOUT</span><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg></div>
+      <div class="dev is-unknown"><span class="nm">Wireless RX 07</span><span class="spacer"></span><span class="val">via SW-A</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg></div>
+      <div class="dev is-unknown"><span class="nm">Antenna combiner</span><span class="spacer"></span><span class="val">via SW-A</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg></div>
+      <div class="dev"><span class="nm">Core Switch</span><span class="spacer"></span><span class="val">0 err</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Stage Switch B</span><span class="spacer"></span><span class="val">0 err</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">FOH Switch</span><span class="spacer"></span><span class="val">0 err</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Wi-Fi AP — floor</span><span class="spacer"></span><span class="val">34 cl</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Firewall</span><span class="spacer"></span><span class="val">ok</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+    </div>
+
+    <div class="group">
+      <span class="lbl">Power · Rack <span class="n">12</span></span>
+      <div class="dev"><span class="nm">UPS — Rack 1</span><span class="spacer"></span><span class="val">34 min</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">UPS — Rack 2</span><span class="spacer"></span><span class="val">31 min</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg></div>
+      <div class="dev"><span class="nm">PDU — Stage</span><span class="spacer"></span><span class="val">11.2 A</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">PDU — FOH</span><span class="spacer"></span><span class="val">6.8 A</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev is-maint"><span class="nm">Amp rack — B</span><span class="spacer"></span><span class="val">MAINT 22:00</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--maint)" stroke-width="1.5"/><line x1="2" y1="8" x2="8" y2="2" stroke="var(--maint)" stroke-width="1.2"/></svg></div>
+      <div class="dev"><span class="nm">Rack temp — 1</span><span class="spacer"></span><span class="val">24.1 °C</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Rack temp — 2</span><span class="spacer"></span><span class="val">26.8 °C</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+      <div class="dev"><span class="nm">Audio clock</span><span class="spacer"></span><span class="val">locked</span><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up-dim)"/></svg></div>
+    </div>
+  </div>
+
+  <div class="statusbar wall-status">
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span>skew <b>≤ 12 ms</b></span>
+    <span class="warn4">SHOW MODE — MAIN HALL · 19:30–23:00 · non-critical muted</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+
+</div>
+</body>
+</html>

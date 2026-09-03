@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Design Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .page { max-width: 1060px; margin: 0 auto; padding: 40px 32px 80px; }
+  h1 { font-size: 18px; font-weight: 650; letter-spacing: .01em; }
+  .sub { font-size: 13px; color: var(--muted); margin-top: 6px; max-width: 70ch; line-height: 1.55; }
+  .rule-sect { margin-top: 36px; border-top: 1px solid var(--hairline); padding-top: 14px; }
+  .rule-sect > .lbl { font-size: 10.5px; }
+
+  .screens { margin-top: 10px; }
+  .srow { display: flex; align-items: baseline; gap: 14px; padding: 11px 2px; border-bottom: 1px solid var(--hairline); }
+  .srow a.name { font-size: 14px; font-weight: 550; color: var(--ink); }
+  .srow a.name:hover { color: var(--signal); }
+  .srow .what { font-size: 12px; color: var(--muted); }
+  .srow .spacer { flex: 1; }
+  .srow .mono { font-size: 10.5px; color: var(--faint); }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 12px; }
+  .sw { display: flex; align-items: center; gap: 8px; }
+  .sw i { width: 22px; height: 22px; border-radius: 3px; border: 1px solid var(--edge); display: block; }
+  .sw .k { font-size: 11px; color: var(--sub); }
+  .sw .mono { display: block; font-size: 9.5px; color: var(--faint); }
+
+  .type-spec { display: grid; gap: 10px; margin-top: 12px; }
+  .ts-row { display: flex; align-items: baseline; gap: 18px; }
+  .ts-row .demo { color: var(--ink); }
+  .ts-row .note { font-family: var(--font-mono); font-size: 10px; color: var(--faint); }
+
+  .grammar { margin-top: 12px; width: auto; }
+  .grammar td { height: 30px; }
+
+  .comp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .series-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .series-row i { width: 34px; height: 12px; border-radius: 2px; }
+  .series-row .mono { font-size: 10px; color: var(--faint); margin-left: 8px; }
+
+  .rules-list { margin-top: 10px; display: grid; gap: 7px; }
+  .rules-list p { font-size: 12.5px; color: var(--sub); line-height: 1.5; max-width: 78ch; }
+  .rules-list p b { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Design system</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+  <div class="main">
+<div class="page">
+  <h1>Beacon — mockup library</h1>
+  <p class="sub">Direction: <b style="color:var(--sub)">Graphite</b> — an instrument, not a dashboard.
+  Chrome stays near-achromatic; hue is reserved for state, data and one signal accent. Structure comes
+  from hairline rules, whitespace and the label voice — never from boxes. Archivo carries the UI,
+  IBM Plex Mono carries every piece of data.</p>
+
+  <div class="rule-sect">
+    <span class="lbl">Screens</span>
+    <div class="screens">
+      <div class="srow"><a class="name" href="dashboard.html">Dashboard</a><span class="what">the in-app home — site health, open incidents, what needs attention before it pages anyone</span><span class="spacer"></span><span class="mono">dashboard.html</span></div>
+      <div class="srow"><a class="name" href="flows.html">Flows</a><span class="what">the library — versions with semantic diffs, used-by counts, drafts; opens into the builder</span><span class="spacer"></span><span class="mono">flows.html</span></div>
+      <div class="srow"><a class="name" href="wall.html">Status wall</a><span class="what">chromeless rack-room screen — quiet until something matters, incident band on top</span><span class="spacer"></span><span class="mono">wall.html</span></div>
+      <div class="srow"><a class="name" href="builder-play.html">Builder — interactive</a><span class="what">PLAY WITH IT — drag nodes, wire ports, get refusals with working insert-fix, run the draft, hit the publish gates</span><span class="spacer"></span><span class="mono">builder-play.html</span></div>
+      <div class="srow"><a class="name" href="builder.html">Builder — reference</a><span class="what">the static spec frame — canvas, routed-trace wires, typed-port refusal, test run, byte inspector</span><span class="spacer"></span><span class="mono">builder.html</span></div>
+      <div class="srow" style="padding-left:22px"><a class="name" href="builder-publish.html" style="font-size:13px">↳ Publish gates</a><span class="what">the checklist — pass/fail gates, semantic diff, impact; blocked with the fix named</span><span class="spacer"></span><span class="mono">builder-publish.html</span></div>
+      <div class="srow" style="padding-left:22px"><a class="name" href="builder-bytes.html" style="font-size:13px">↳ Byte inspector</a><span class="what">expanded — frames rail, framing ruler, decode chain, save-as-fixture</span><span class="spacer"></span><span class="mono">builder-bytes.html</span></div>
+      <div class="srow" style="padding-left:22px"><a class="name" href="builder-session.html" style="font-size:13px">↳ Session mode</a><span class="what">same body, push instead of poll — live state writes + the forced liveness choice</span><span class="spacer"></span><span class="mono">builder-session.html</span></div>
+      <div class="srow" style="padding-left:22px"><a class="name" href="builder-search.html" style="font-size:13px">↳ Palette search</a><span class="what">synonyms with reasoning — “telnet” finds the raw-ASCII preset and says why</span><span class="spacer"></span><span class="mono">builder-search.html</span></div>
+      <div class="srow"><a class="name" href="monitor.html">Monitor detail</a><span class="what">uptime segments, threshold charts, run history, per-node run inspector</span><span class="spacer"></span><span class="mono">monitor.html</span></div>
+      <div class="srow"><a class="name" href="devices.html">Devices</a><span class="what">dependency tree beside the inventory — suppression visible in place</span><span class="spacer"></span><span class="mono">devices.html</span></div>
+      <div class="srow"><a class="name" href="incidents.html">Incidents</a><span class="what">queue with error-class routing, state-machine timeline, suppression tree</span><span class="spacer"></span><span class="mono">incidents.html</span></div>
+      <div class="srow"><a class="name" href="monitors.html">Monitors</a><span class="what">the fleet of checks — states, flap, uptime, derived tags</span><span class="spacer"></span><span class="mono">monitors.html</span></div>
+      <div class="srow"><a class="name" href="discovery.html">Discovery</a><span class="what">review queue — new/missing since last scan, switch-port facts, profile match proposing monitors</span><span class="spacer"></span><span class="mono">discovery.html</span></div>
+      <div class="srow"><a class="name" href="packs.html">Packs</a><span class="what">installed + update review diff — egress scope, named credentials, write-capable flagged loudly</span><span class="spacer"></span><span class="mono">packs.html</span></div>
+      <div class="srow"><a class="name" href="alerting.html">Alerting</a><span class="what">error-class routing table, channels, silences with mandatory expiry, show mode</span><span class="spacer"></span><span class="mono">alerting.html</span></div>
+      <div class="srow"><a class="name" href="settings.html">Settings</a><span class="what">roles, egress floor, enforced ceilings, retention, self-health, the master-key warning</span><span class="spacer"></span><span class="mono">settings.html</span></div>
+      <div class="srow"><a class="name" href="agents.html">Agents</a><span class="what">fleet — link state, spool, skew, capability gaps, egress proposal diff</span><span class="spacer"></span><span class="mono">agents.html</span></div>
+      <div class="srow"><a class="name" href="palette.html">Command palette</a><span class="what">⌘K — go anywhere, do anything in two keystrokes; shortcuts taught in place</span><span class="spacer"></span><span class="mono">palette.html</span></div>
+      <div class="srow"><a class="name" href="../explorations/direction-board.html">Direction board</a><span class="what">round 1 — the three candidate treatments (A won)</span><span class="spacer"></span><span class="mono">explorations/</span></div>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">Surfaces &amp; ink</span>
+    <div class="swatches">
+      <span class="sw"><i style="background:var(--bg0)"></i><span class="k">bg0 page<span class="mono">#151614</span></span></span>
+      <span class="sw"><i style="background:var(--bg1)"></i><span class="k">bg1 panel<span class="mono">#1B1C1A</span></span></span>
+      <span class="sw"><i style="background:var(--bg2)"></i><span class="k">bg2 raised<span class="mono">#232421</span></span></span>
+      <span class="sw"><i style="background:var(--hairline)"></i><span class="k">hairline<span class="mono">#242522</span></span></span>
+      <span class="sw"><i style="background:var(--ink)"></i><span class="k">ink<span class="mono">#E9E7E1</span></span></span>
+      <span class="sw"><i style="background:var(--sub)"></i><span class="k">sub<span class="mono">#A9A69E</span></span></span>
+      <span class="sw"><i style="background:var(--muted)"></i><span class="k">muted<span class="mono">#726F67</span></span></span>
+      <span class="sw"><i style="background:var(--signal)"></i><span class="k">signal<span class="mono">#8FB6CE</span></span></span>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">State grammar — fill is confirmed, outline is transitional, never color alone</span>
+    <table class="data grammar">
+      <thead><tr><th>State</th><th>Glyph</th><th>Meaning</th><th>Where it comes from</th></tr></thead>
+      <tbody>
+        <tr><td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="code">● filled circle</td><td>confirmed healthy</td><td>state machine: up</td></tr>
+        <tr><td><span class="state st-recovering"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--up)" stroke-width="1.5"/></svg><span class="stl">Recovering</span></span></td><td class="code">○ outline circle</td><td>healthy, unconfirmed</td><td>k successes pending</td></tr>
+        <tr><td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="stl">Down</span></span></td><td class="code">■ filled square</td><td>confirmed down</td><td>n failures + dwell met</td></tr>
+        <tr><td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="stl">Suspect</span></span></td><td class="code">□ outline square</td><td>failing, unconfirmed — visible before any page</td><td>first failure</td></tr>
+        <tr><td><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="stl">Degraded</span></span></td><td class="code">▲ triangle</td><td>working, out of spec</td><td>status frame: degraded</td></tr>
+        <tr><td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="stl">Unknown</span></span></td><td class="code">◌ dashed</td><td>not being asked — never “down”</td><td>agent unreachable, suppressed</td></tr>
+        <tr><td><span class="state st-maint"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--maint)" stroke-width="1.5"/><line x1="2" y1="8" x2="8" y2="2" stroke="var(--maint)" stroke-width="1.2"/></svg><span class="stl">Maintenance</span></span></td><td class="code">⊘ slashed</td><td>collected, not notifying</td><td>window or silence (I12)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">Type — Archivo (UI · width axis for labels) + IBM Plex Mono (all data)</span>
+    <div class="type-spec">
+      <div class="ts-row"><span class="demo" style="font-size:16px;font-weight:600">Channel health</span><span class="note">archivo 600 · 16 — page title</span></div>
+      <div class="ts-row"><span class="demo" style="font-size:13px">A refusal must carry a suggestion.</span><span class="note">archivo 400 · 13 — body</span></div>
+      <div class="ts-row"><span class="demo lbl" style="font-size:10.5px">Read until · Stage West · Test run</span><span class="note">archivo 600 · wdth 78 · caps +12% — the label voice</span></div>
+      <div class="ts-row"><span class="demo mono" style="font-size:12px">-61 dBm · 18:42:07 · 25 31 45 52 53 54</span><span class="note">plex mono — if it’s data, it’s mono</span></div>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">Controls &amp; badges</span>
+    <div class="comp-row">
+      <button class="btn btn-primary">▸ Test run</button>
+      <button class="btn btn-secondary">Save draft</button>
+      <button class="btn btn-ghost">History</button>
+      <button class="btn btn-danger">Revoke</button>
+      <input class="input" placeholder="Filter by tag…" style="width:160px">
+      <select class="select"><option>delimiter</option></select>
+      <span class="badge badge-err">timeout</span>
+      <span class="badge badge-warn">protocol</span>
+      <span class="badge badge-ok">recovered</span>
+      <span class="badge badge-info">derived</span>
+      <span class="badge">snmp v2</span>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">Data series — validated for CVD + contrast on both surfaces</span>
+    <div class="series-row">
+      <i style="background:var(--series-1)"></i><i style="background:var(--series-2)"></i><i style="background:var(--series-3)"></i><i style="background:var(--series-4)"></i><i style="background:var(--series-5)"></i><i style="background:var(--series-6)"></i><i style="background:var(--series-7)"></i><i style="background:var(--series-8)"></i>
+      <span class="mono">fixed order, never cycled · &gt;3 series on scatter → fold or facet</span>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">Navigation — simple to walk, fast to fly</span>
+    <div class="rules-list">
+      <p><b>One rail, three groups.</b> Observe · Build · Platform — ten destinations, every one a single hop. No nesting, no hamburger, no second sidebar.</p>
+      <p><b>⌘K is the power spine.</b> Any device, monitor, flow, incident or action in two keystrokes. Results carry context (state, owner, path) and the shortcut that would have done it — the palette teaches the fast way while doing the slow way.</p>
+      <p><b>Keys everywhere.</b> j/k move lists, ↵ opens, g-chords jump (g d devices, g i incidents, g w wall), ? shows the sheet. The mouse is never required; it is also never punished.</p>
+      <p><b>The shell never changes.</b> Top bar (mark · context · ⌘K · clock), rail, work area, status bar — on every page. Immersive surfaces collapse the rail to icons; nothing disappears.</p>
+      <p><b>Selection drives the right rail.</b> Pick a run, an incident, an agent, a node — detail appears in the same place with the same anatomy every time.</p>
+      <p><b>Every state is a URL.</b> A monitor at a time range, a run capture, a draft diff — all addressable, all shareable, straight from Grafana back into the byte that explains the dip.</p>
+    </div>
+  </div>
+
+  <div class="rule-sect">
+    <span class="lbl">The rules that make it Beacon</span>
+    <div class="rules-list">
+      <p><b>Rules, not boxes.</b> Hairlines, whitespace and the label voice structure a screen. A box means an object: a node, a popover, a hex viewport.</p>
+      <p><b>Color is state.</b> Chrome is achromatic. When something is saturated, it is telling you the truth about a device, a series, or a selection — never decorating.</p>
+      <p><b>Quiet until something matters.</b> Normal is dim. Only abnormal states earn brightness, and only unacknowledged-down earns motion (a slow pulse, honoring reduced-motion).</p>
+      <p><b>If it’s data, it’s mono.</b> Values, addresses, timestamps, hex, durations — IBM Plex Mono, tabular. Prose and labels — Archivo.</p>
+      <p><b>A refusal carries a suggestion.</b> Every blocked action names its reason and, where one exists, the node or setting that fixes it.</p>
+      <p><b>Segments, not gradients.</b> Time and level render as discrete segments — readable across a room, honest about buckets.</p>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Builder (interactive)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .app { display: grid; grid-template-rows: 46px 1fr auto 27px; height: 100vh; }
+  .work { display: grid; grid-template-columns: 184px 184px 1fr 264px; min-height: 0; }
+
+  .draft-badge { font-family: var(--font-mono); font-size: 10px; color: var(--warn);
+    border: 1px solid color-mix(in oklab, var(--warn) 40%, transparent); padding: 2px 7px;
+    border-radius: var(--r-badge); letter-spacing: .04em; }
+  .gate { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .gate b { color: var(--sub); font-weight: 500; } .gate .ok { color: var(--up); }
+
+  /* palette */
+  .palette { border-right: 1px solid var(--hairline); overflow-y: auto; padding-bottom: 20px; }
+  .palette .search-wrap { padding: 12px 12px 4px; }
+  .palette .input { width: 100%; }
+  .palette .syn { padding: 5px 14px 0; font-size: 10.5px; color: var(--faint); min-height: 15px; }
+  .palette .tiers { display: flex; align-items: center; gap: 8px; padding: 10px 14px 4px; }
+  .tier-t { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border: 1px solid var(--edge);
+    border-radius: var(--r-badge); color: var(--sub); cursor: pointer; user-select: none; }
+  .tier-t.on { background: var(--bg2); color: var(--ink); border-color: var(--edge-strong); }
+  .tier-t.off { color: var(--faint); border-style: dashed; }
+  .pal-sect { margin-top: 16px; }
+  .pal-sect .lbl { display: block; padding: 0 14px 5px; font-size: 9.5px; }
+  .pal-row { display: flex; align-items: center; height: 27px; padding: 0 14px; font-size: 12px;
+    color: var(--sub); cursor: grab; user-select: none; }
+  .pal-row:hover { background: var(--bg-hover); color: var(--ink); }
+  .pal-row .synhit { margin-left: 7px; font-family: var(--font-mono); font-size: 9px; color: var(--signal); }
+
+  /* canvas */
+  .canvas-wrap { position: relative; overflow: auto; background: var(--bg0); }
+  .canvas { position: relative; width: 1600px; height: 1000px; transform-origin: 0 0;
+    background-image: radial-gradient(#252624 0.8px, transparent 0.8px);
+    background-size: 26px 26px; background-position: 13px 13px; }
+  svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; }
+  svg.wires path { fill: none; stroke: #4E4F4A; stroke-width: 1.5; pointer-events: visibleStroke; cursor: pointer; }
+  svg.wires path.sel { stroke: var(--signal); }
+  svg.wires path.temp { stroke: var(--signal); stroke-dasharray: 5 4; pointer-events: none; }
+  svg.wires path.refusedw { stroke: var(--down); stroke-dasharray: 5 4; opacity: .85; pointer-events: none; }
+
+  .scope { position: absolute; border: 1px dashed #33342F; border-radius: 6px;
+    background: rgba(233,231,225,0.015); pointer-events: none; }
+  .scope .sc-head { position: absolute; top: -1px; left: -1px; display: flex; gap: 8px; align-items: center;
+    background: var(--bg0); border: 1px solid #33342F; border-radius: 6px 0 4px 0; padding: 4px 10px; pointer-events: auto; }
+  .sc-head .lbl { font-size: 9px; color: var(--sub); }
+  .sc-head .cfg { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+  .node { position: absolute; background: var(--bg1); border: 1px solid var(--edge-strong);
+    border-radius: 4px; min-width: 150px; user-select: none; }
+  .node .nh { display: flex; align-items: center; gap: 7px; padding: 7px 11px 3px; cursor: grab; }
+  .node .nh:active { cursor: grabbing; }
+  .node .nn { font-size: 12.5px; font-weight: 550; color: var(--ink); white-space: nowrap; }
+  .node .ms { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); padding-left: 12px; }
+  .node .nb { padding: 0 11px 8px; font-family: var(--font-mono); font-size: 9.5px; color: var(--faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+  .node.ok { border-left: 2px solid var(--up); }
+  .node.fail { border-left: 2px solid var(--down); background: color-mix(in oklab, var(--down) 4%, var(--bg1)); }
+  .node.sel { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
+  .node.sel .nb, .node:hover .nb { color: var(--muted); }
+  .tick { color: var(--up); font-size: 10px; line-height: 1; }
+  .cross { color: var(--down); font-size: 10px; line-height: 1; }
+  .fail-msg { padding: 0 11px 8px; font-family: var(--font-mono); font-size: 10px; color: var(--down); }
+
+  .port { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--bg0);
+    border: 1.5px solid #5F5D55; cursor: crosshair; z-index: 3; }
+  .port:hover { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-dim); }
+  .port.filled { background: #5F5D55; }
+  .port.err { border-color: #7A4744; width: 8px; height: 8px; cursor: default;
+    opacity: 0; transition: opacity .12s; }
+  .node:hover .port.err, .node.sel .port.err { opacity: 1; }
+  .port.hot { border-color: var(--signal); background: var(--signal-dim); }
+
+  .note { position: absolute; border: 1px dashed #33342F; border-radius: 4px;
+    padding: 8px 11px 9px; max-width: 320px; background: var(--bg0); cursor: grab; user-select: none; }
+  .note .lbl { font-size: 8.5px; display: block; margin-bottom: 3px; }
+  .note p { font-size: 11px; line-height: 1.5; color: var(--muted); }
+  .note p code { font-family: var(--font-mono); font-size: 10px; color: var(--sub); }
+
+  .refusal { position: absolute; width: 268px; padding: 10px 12px 11px; z-index: 20; }
+  .refusal .rt { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .refusal .rt .code { font-family: var(--font-mono); font-size: 11px; color: var(--down); }
+  .refusal p { font-size: 11.5px; color: var(--sub); line-height: 1.5; margin: 5px 0 9px; }
+  .refusal p code { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink); }
+  .refusal .acts { display: flex; gap: 8px; }
+
+  .zoombar { position: fixed; z-index: 5; display: flex; gap: 2px; align-items: center;
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+    background: var(--bg1); border: 1px solid var(--edge); border-radius: 3px; padding: 3px 8px; }
+  .zoombar span { cursor: pointer; padding: 0 4px; } .zoombar span:hover { color: var(--ink); }
+
+  /* inspector */
+  .inspector { border-left: 1px solid var(--hairline); overflow-y: auto; }
+  .insp-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--hairline); }
+  .insp-head .nn { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .insp-head .nid { font-family: var(--font-mono); font-size: 10px; color: var(--faint); margin-top: 2px; }
+  .insp-sect { padding: 12px 14px 14px; border-bottom: 1px solid var(--hairline); display: grid; gap: 10px; }
+  .insp-sect > .lbl { font-size: 9.5px; }
+  .field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .field-row .fl { font-size: 12px; color: var(--sub); }
+  .field-row .select, .field-row .input { width: 128px; height: 26px; font-size: 11.5px; }
+  .tgl { width: 26px; height: 15px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--edge-strong);
+    position: relative; flex: none; cursor: pointer; }
+  .tgl i { position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .tgl.on { background: color-mix(in oklab, var(--signal) 30%, var(--bg3)); border-color: var(--signal); }
+  .tgl.on i { left: auto; right: 2px; background: var(--signal-strong); }
+  .portlist { display: grid; gap: 6px; }
+  .portlist .pr { display: flex; gap: 8px; align-items: center; font-size: 11.5px; color: var(--sub); }
+  .portlist .pr .ty { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--bg2);
+    padding: 1px 6px; border-radius: 2px; border: 1px solid var(--edge); }
+  .portlist .pr .st { margin-left: auto; font-size: 10.5px; color: var(--faint); }
+  .howto { padding: 18px 16px; }
+  .howto .lbl { display: block; margin-bottom: 12px; }
+  .howto .h-row { display: flex; gap: 10px; padding: 5px 0; font-size: 12px; color: var(--sub); line-height: 1.5; }
+  .howto .h-row .k { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--hairline);
+    border-radius: 3px; padding: 1px 6px; height: fit-content; margin-top: 1px; white-space: nowrap; }
+
+  /* dock — collapsed until there is something to show */
+  .dock { border-top: 1px solid var(--edge); background: var(--bg0); }
+  .runbar { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; }
+  .runbar .select { font-family: var(--font-mono); font-size: 11.5px; }
+  .runbar .result { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); }
+  .runbar .result .mono { font-size: 11px; color: var(--muted); }
+  .hexes { display: none; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--hairline); height: 188px; }
+  .app.dock-open .hexes { display: grid; }
+  .hexpane { padding: 10px 16px 12px; overflow: auto; }
+  .hexpane + .hexpane { border-left: 1px solid var(--hairline); }
+  .hex-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .hex-head .meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .hex-head .spacer { flex: 1; }
+  .copyas { display: flex; gap: 4px; }
+  .copyas span { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); border: 1px solid var(--edge);
+    padding: 1px 6px; border-radius: 2px; cursor: pointer; }
+  .copyas span:hover { color: var(--ink); background: var(--bg2); }
+  .hrow { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; line-height: 1.9; white-space: pre; }
+  .hrow .off { color: var(--faint); } .hrow .hx { color: var(--sub); } .hrow .asc { color: var(--muted); }
+  .hx .hl { background: color-mix(in oklab, var(--down) 30%, transparent); color: var(--ink); border-radius: 2px; }
+  .asc .hl { color: var(--down); }
+  .hx .dlm { border-bottom: 2px solid var(--signal); } .asc .dlm { color: var(--signal); }
+  .msk { background: repeating-linear-gradient(45deg, rgba(210,95,90,.13) 0 4px, transparent 4px 8px);
+    border: 1px solid rgba(210,95,90,.28); border-radius: 2px; color: var(--down); padding: 0 2px; }
+  .hexfoot { margin-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .sealed-note { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 11px; color: var(--sub); }
+  .sealed-note .lock { color: var(--down); font-size: 10px; }
+  .sealed-note code { font-family: var(--font-mono); font-size: 10px; color: var(--ink); }
+
+  /* publish modal + toast */
+  .overlay { position: fixed; inset: 0; background: rgba(10,10,9,.45); z-index: 30; display: none; }
+  .pubmodal { position: fixed; left: 50%; top: 60px; transform: translateX(-50%); width: 620px; z-index: 31;
+    background: var(--bg1); border: 1px solid var(--edge-strong); border-radius: 6px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); display: none; }
+  .pm-head { padding: 14px 18px 12px; border-bottom: 1px solid var(--hairline); }
+  .pm-head .t { font-size: 14px; font-weight: 600; color: var(--ink); display: block; }
+  .pm-head .meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; display: block; }
+  .pm-sect { padding: 12px 18px 14px; border-bottom: 1px solid var(--hairline); }
+  .pm-sect > .lbl { display: block; margin-bottom: 9px; }
+  .gate-row { display: flex; gap: 10px; padding: 4px 0; font-size: 12.5px; color: var(--sub); line-height: 1.5; }
+  .gate-row .gi { width: 14px; flex: none; text-align: center; }
+  .gate-row.gok .gi { color: var(--up); }
+  .gate-row.gbad { color: var(--ink); } .gate-row.gbad .gi { color: var(--down); }
+  .pm-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; }
+  .pm-foot .spacer { flex: 1; }
+  .toast { position: fixed; left: 50%; bottom: 60px; transform: translateX(-50%); z-index: 40;
+    background: var(--bg2); border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--sub);
+    font-size: 12px; padding: 8px 14px; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar">
+    <span class="mark" style="width:auto">BEACON</span>
+    <span class="crumb"><span style="color:var(--muted)">Flows</span><span class="sep">/</span><b id="flowname">New flow</b></span>
+    <span class="draft-badge">DRAFT · playground</span>
+    <span class="spacer"></span>
+    <span class="gate">worst case <b>6.1 s</b> of 60 s interval <span class="ok">✓</span></span>
+    <a href="#" data-toast="Semantic diff opens the version comparison — see builder-publish.html">Semantic diff</a>
+    <button class="btn btn-ghost" data-toast="Discards this draft">Discard draft</button>
+    <button class="btn btn-primary" id="btn-publish">Publish</button>
+    <span class="search-chip" data-toast="⌘K — see palette.html">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="work">
+    <div class="nav">
+      <span class="lbl nav-sect">Observe</span>
+      <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+      <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+      <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+      <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+      <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+      <span class="lbl nav-sect">Build</span>
+      <a href="flows.html" class="active"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+      <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+      <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+      <span class="lbl nav-sect">Platform</span>
+      <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+      <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+      <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+    </div>
+
+    <div class="palette" id="palette">
+      <div class="search-wrap"><input class="input" id="pal-search" placeholder="Search nodes…" autocomplete="off"></div>
+      <div class="syn" id="pal-syn">synonyms work — try “telnet”</div>
+      <div class="tiers">
+        <span class="lbl" style="font-size:9px">Tier</span>
+        <span class="tier-t on" data-tier="1">1</span><span class="tier-t on" data-tier="2">2</span><span class="tier-t off" data-tier="3">3</span>
+      </div>
+      <div id="pal-body"></div>
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="canvas" id="canvas">
+        <svg class="wires" id="wires"></svg>
+        <div class="scope" id="scopebox" style="display:none">
+          <div class="sc-head">
+            <span class="lbl">Connection Scope</span>
+            <span class="cfg">tcp {{device.host}}:4352 · transient · connect 3 s</span>
+          </div>
+        </div>
+        <div class="note" id="note1" style="display:none">
+          <span class="lbl">Note</span>
+          <p>Greeting is <code>HELLO 1 &lt;nonce&gt;</code> when auth is on. Hash =
+          <code>md5(nonce + password)</code>, prepended to every command. Response is
+          <code>ERST=</code> + six digits, digit 3 is lamp.</p>
+        </div>
+      </div>
+      <div class="zoombar" id="zoombar"><span id="z-out">−</span><span id="z-pct" style="cursor:default">100%</span><span id="z-in">+</span><span id="z-fit" style="padding-left:8px">fit</span></div>
+    </div>
+
+    <div class="inspector" id="inspector"></div>
+  </div>
+
+  <div class="dock">
+    <div class="runbar">
+      <span class="lbl">Test run</span>
+      <select class="select" style="width:240px"><option>Projector — Main Hall · 10.20.4.31 · agent av</option></select>
+      <button class="btn btn-primary" id="btn-run">▸ Run draft</button>
+      <select class="select" id="example" style="width:auto">
+        <option value="simple">Example: simple HTTP-style check</option>
+        <option value="projector">Example: projector — challenge-response</option>
+      </select>
+      <span class="spacer" style="flex:1"></span>
+      <span class="result" id="run-result"><span class="mono">no run yet — the draft executes exactly as drawn</span></span>
+      <button class="btn btn-ghost btn-sm" id="btn-bytes">Bytes ▾</button>
+    </div>
+    <div class="hexes">
+      <div class="hexpane">
+        <div class="hex-head">
+          <span class="lbl">Send ① · payload</span>
+          <span class="meta">41 B · sealed range 0x00–0x1F</span>
+          <span class="spacer"></span>
+          <div class="copyas"><span data-toast="Copied as hex">hex</span><span data-toast="Copied as ascii">ascii</span><span data-toast="Copied as base64">b64</span></div>
+        </div>
+        <div class="hrow"><span class="off">00000000</span><span class="hx"><span class="msk">·· ·· ·· ·· ·· ·· ·· ··  ·· ·· ·· ·· ·· ·· ·· ··</span></span><span class="asc"><span class="msk">····sealed······</span></span></div>
+        <div class="hrow"><span class="off">00000010</span><span class="hx"><span class="msk">·· ·· ·· ·· ·· ·· ·· ··  ·· ·· ·· ·· ·· ·· ·· ··</span></span><span class="asc"><span class="msk">····sealed······</span></span></div>
+        <div class="hrow"><span class="off">00000020</span><span class="hx">25 31 45 52 53 54 20 3F  0D</span><span class="asc">%1ERST ?.</span></div>
+        <div class="sealed-note"><span class="lock">◆</span>Bytes 0–31 derive from <code>secret(pj_pass)</code> — masked in every capture, export and expression.</div>
+      </div>
+      <div class="hexpane">
+        <div class="hex-head">
+          <span class="lbl">Expect ② · output</span>
+          <span class="meta">14 B · 188 ms · frame 1/1 · delimiter "\r"</span>
+          <span class="spacer"></span>
+          <div class="copyas"><span data-toast="Copied as hex">hex</span><span data-toast="Copied as ascii">ascii</span><span data-toast="Copied as base64">b64</span></div>
+        </div>
+        <div class="hrow"><span class="off">00000000</span><span class="hx">25 31 45 52 53 54 3D 30  30 30 <span class="hl">31</span> 30 30 <span class="dlm">0D</span></span><span class="asc">%1ERST=000<span class="hl">1</span>00<span class="dlm">·</span></span></div>
+        <div class="hexfoot"><span style="color:var(--faint)">selection</span> 0x0A · 1 B · dec 49 · bin 0011 0001 · regex group d[3] · asserted <span style="color:var(--down)">d[3] = 1 → lamp fault</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="pubmodal" id="pubmodal">
+  <div class="pm-head">
+    <span class="t" id="pm-title">Publish</span>
+    <span class="meta">draft · playground</span>
+  </div>
+  <div class="pm-sect">
+    <span class="lbl">Gates</span>
+    <div id="gates"></div>
+  </div>
+  <div class="pm-sect" style="border-bottom:none">
+    <span class="lbl">Changelog</span>
+    <input class="input" style="width:100%" placeholder="What changed, for the version history…">
+  </div>
+  <div class="pm-foot">
+    <span id="pub-blocked" style="font-size:12px;color:var(--down)"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-ghost" id="pub-cancel">Keep editing</button>
+    <button class="btn btn-primary" id="pub-go">Publish</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== Beacon builder playground v2 — calm by default, reveal on demand ===== */
+const TYPES = {
+  tcp_request:{name:'TCP Request', tier:1, cat:'Transport', body:'{{device.host}}:4352 · until "\\r"', ins:[], outs:['bytes']},
+  http_request:{name:'HTTP Request', tier:1, cat:'Transport', body:'GET https://{{device.host}}/status', ins:[], outs:['bytes']},
+  icmp:{name:'ICMP Ping', tier:1, cat:'Transport', body:'count 3 · interval 200 ms', ins:[], outs:['record']},
+  send:{name:'Send', tier:2, cat:'Transport', body:'payload…', ins:['any'], outs:['void'], scoped:true},
+  expect:{name:'Expect', tier:2, cat:'Transport', body:'until "\\r" · strip IAC', ins:['void'], outs:['bytes'], scoped:true},
+  snmp:{name:'SNMP', tier:2, cat:'Transport', body:'walk 1.3.6.1.2.1.2.2', ins:[], outs:['record']},
+  decode:{name:'Decode', tier:1, cat:'Bytes', body:'ascii · strict', ins:['bytes'], outs:['string']},
+  build_bytes:{name:'Build Bytes', tier:2, cat:'Bytes', body:'hex + fields + checksum slot', ins:['record'], outs:['bytes']},
+  checksum:{name:'Checksum', tier:2, cat:'Bytes', body:'md5( {{nonce}} + secret(…) )', ins:['string'], outs:['string']},
+  split:{name:'Split Frames', tier:2, cat:'Bytes', body:'delimiter "\\r"', ins:['bytes'], outs:['list<bytes>']},
+  hmac:{name:'HMAC', tier:3, cat:'Bytes', body:'sha-256 · key from secret', ins:['bytes'], outs:['bytes']},
+  bitfield:{name:'Bit Field', tier:3, cat:'Bytes', body:'bits 4–7 → flags', ins:['bytes'], outs:['record']},
+  regex:{name:'Regex Extract', tier:1, cat:'Parse', body:'(?<d>\\d{6}) → record', ins:['string'], outs:['record']},
+  parse:{name:'Parse', tier:1, cat:'Parse', body:'json', ins:['string'], outs:['json']},
+  coerce:{name:'Coerce', tier:1, cat:'Parse', body:'string → number · on-fail branch', ins:['string'], outs:['number']},
+  table_sel:{name:'Table Select', tier:2, cat:'Parse', body:'pick ifIndex, ifErrors', ins:['record'], outs:['record']},
+  scale:{name:'Scale & Offset', tier:1, cat:'Transform', body:'× 1 − 128 → dBm', ins:['number'], outs:['number']},
+  lookup:{name:'Lookup Table', tier:1, cat:'Transform', body:'38 rows · default "unknown"', ins:['string'], outs:['string']},
+  delta:{name:'Delta / Rate', tier:2, cat:'Transform', body:'vs previous run · wrap 32-bit', ins:['number'], outs:['number']},
+  expression:{name:'Expression', tier:2, cat:'Transform', body:'int(d[3])', ins:['record'], outs:['number']},
+  iff:{name:'If', tier:1, cat:'Control', body:'auth == 1 → true', ins:['any'], outs:['any','any'], outLabels:['true','false']},
+  switchn:{name:'Switch', tier:2, cat:'Control', body:'on prop · 3 cases', ins:['record'], outs:['any','any'], outLabels:['case','default']},
+  foreach:{name:'ForEach', tier:2, cat:'Control', body:'concurrency 4 · continue-on-error', ins:['list<bytes>'], outs:['record']},
+  callflow:{name:'Call Flow', tier:2, cat:'Control', body:'→ “Get one property” v3', ins:['record'], outs:['record']},
+  assert:{name:'Assert', tier:1, cat:'Evaluate · Emit', body:'d[3] == 0 · critical · “lamp fault”', ins:['record'], outs:['record']},
+  threshold:{name:'Threshold', tier:1, cat:'Evaluate · Emit', body:'warn −75 · crit −85 · hold 2', ins:['number'], outs:['status']},
+  emit_status:{name:'Emit Status', tier:1, cat:'Evaluate · Emit', body:'→ {{assert.message}}', ins:['any'], outs:[]},
+  emit_metric:{name:'Emit Metric', tier:1, cat:'Evaluate · Emit', body:'rf_dbm · labels: channel', ins:['number'], outs:[]},
+  set_state:{name:'Set State', tier:2, cat:'Evaluate · Emit', body:'run · key last_value', ins:['any'], outs:[]},
+};
+const SYN = { telnet:'tcp_request', 'port 23':'tcp_request', ascii:'tcp_request', crc:'checksum',
+  hash:'checksum', json:'parse', xml:'parse', convert:'coerce', number:'coerce', dbm:'scale', ping:'icmp',
+  loop:'foreach', subroutine:'callflow' };
+const FIXES = {
+  'bytes>string':['decode'], 'bytes>number':['decode','coerce'], 'bytes>json':['decode','parse'],
+  'bytes>record':['decode','regex'], 'string>number':['coerce'], 'string>json':['parse'],
+  'string>record':['regex'], 'record>number':['expression'], 'json>record':['table_sel'],
+  'list<bytes>>record':['foreach'], 'number>status':['threshold'],
+};
+
+let nodes = {}, edges = [], nid = 0, eid = 0, sel = null, scale = 1;
+const $ = q => document.querySelector(q);
+const canvas = $('#canvas'), wiresEl = $('#wires'), wrap = $('#canvas-wrap');
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'), 2200); }
+document.addEventListener('click', e => { const el = e.target.closest('[data-toast]');
+  if (el){ e.preventDefault(); toast(el.dataset.toast); } });
+
+/* ---------- nodes ---------- */
+function addNode(type, x, y, opts={}){
+  const t = TYPES[type]; const id = 'n'+(++nid);
+  const el = document.createElement('div');
+  el.className = 'node'; el.style.left = x+'px'; el.style.top = y+'px'; el.dataset.id = id;
+  el.innerHTML = `<div class="nh"><span class="st"></span><span class="nn">${t.name}</span><span class="ms"></span></div>
+    <div class="nb">${opts.body || t.body}</div>`;
+  canvas.appendChild(el);
+  const n = { id, type, x, y, el, body: opts.body || t.body, w: el.offsetWidth, h: el.offsetHeight };
+  nodes[id] = n;
+  buildPorts(n);
+  el.querySelector('.nh').addEventListener('mousedown', ev => startNodeDrag(ev, n));
+  el.addEventListener('mousedown', ev => { if(!ev.target.classList.contains('port')) select({kind:'node', id}); });
+  return n;
+}
+function buildPorts(n){
+  const t = TYPES[n.type];
+  n.el.querySelectorAll('.port').forEach(p=>p.remove());
+  t.ins.forEach((ty,i)=>{
+    const p = document.createElement('i');
+    p.className='port'; p.title = 'in · '+ty;
+    p.style.left='-5px'; p.style.top=(20 + i*14)+'px';
+    p.dataset.node=n.id; p.dataset.kind='in'; p.dataset.idx=i;
+    n.el.appendChild(p);
+  });
+  t.outs.forEach((ty,i)=>{
+    const p = document.createElement('i');
+    p.className='port filled'; p.title = (t.outLabels?.[i]||'out')+' · '+ty;
+    p.style.right='-5px'; p.style.top=(t.outs.length>1 ? 14+i*14 : 20)+'px';
+    p.dataset.node=n.id; p.dataset.kind='out'; p.dataset.idx=i;
+    p.addEventListener('mousedown', ev => startWire(ev, n.id, i));
+    n.el.appendChild(p);
+  });
+  if (t.ins.length || t.outs.length){
+    const e = document.createElement('i');
+    e.className='port err'; e.title='error — propagates when unconnected';
+    e.style.left='50%'; e.style.bottom='-4px';
+    n.el.appendChild(e);
+  }
+}
+function portPos(id, kind, idx){
+  const n = nodes[id]; const t = TYPES[n.type];
+  if (kind==='in') return { x: n.x - 1, y: n.y + 24 + idx*14 };
+  return { x: n.x + n.w + 1, y: n.y + (t.outs.length>1 ? 18 + idx*14 : 24) };
+}
+
+/* ---------- wires ---------- */
+function roundedPath(pts){
+  if (pts.length===2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i=1;i<pts.length-1;i++){
+    const p=pts[i-1], c=pts[i], nx=pts[i+1];
+    const r = Math.min(10, Math.hypot(c.x-p.x,c.y-p.y)/2, Math.hypot(nx.x-c.x,nx.y-c.y)/2);
+    const v1={x:Math.sign(c.x-p.x),y:Math.sign(c.y-p.y)}, v2={x:Math.sign(nx.x-c.x),y:Math.sign(nx.y-c.y)};
+    d += ` L${c.x-v1.x*r},${c.y-v1.y*r} Q${c.x},${c.y} ${c.x+v2.x*r},${c.y+v2.y*r}`;
+  }
+  d += ` L${pts[pts.length-1].x},${pts[pts.length-1].y}`;
+  return d;
+}
+function routePts(a, b){
+  const dx = b.x - a.x;
+  if (dx >= 32 && Math.abs(b.y-a.y) < 3) return [a,b];
+  if (dx >= 32){ const xm = a.x + dx/2; return [a,{x:xm,y:a.y},{x:xm,y:b.y},b]; }
+  if (Math.abs(b.y - a.y) > 40){                       // target on another row: clean Z between rows
+    const ym = (a.y + b.y) / 2;
+    return [a,{x:a.x+18,y:a.y},{x:a.x+18,y:ym},{x:b.x-18,y:ym},{x:b.x-18,y:b.y},b];
+  }
+  const yb = Math.max(a.y, b.y) + 52;                  // same row backward: loop below
+  return [a,{x:a.x+18,y:a.y},{x:a.x+18,y:yb},{x:b.x-18,y:yb},{x:b.x-18,y:b.y},b];
+}
+function drawWires(){
+  wiresEl.innerHTML = '';
+  edges.forEach(e => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', roundedPath(routePts(portPos(e.from[0],'out',e.from[1]), portPos(e.to,'in',0))));
+    if (sel && sel.kind==='edge' && sel.id===e.id) p.classList.add('sel');
+    p.addEventListener('mousedown', ev => { ev.stopPropagation(); select({kind:'edge', id:e.id}); });
+    wiresEl.appendChild(p);
+  });
+}
+
+/* ---------- drag: nodes ---------- */
+function cpos(ev){ const r = canvas.getBoundingClientRect();
+  return { x:(ev.clientX-r.left)/scale, y:(ev.clientY-r.top)/scale }; }
+function startNodeDrag(ev, n){
+  if (ev.button!==0) return; ev.preventDefault();
+  const start = cpos(ev), ox = n.x - start.x, oy = n.y - start.y;
+  select({kind:'node', id:n.id});
+  const mv = e => { const p = cpos(e);
+    n.x = Math.max(4, Math.round(p.x+ox)); n.y = Math.max(4, Math.round(p.y+oy));
+    n.el.style.left=n.x+'px'; n.el.style.top=n.y+'px'; drawWires(); };
+  const up = () => { window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); };
+  window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+}
+
+/* ---------- drag: wires + refusal ---------- */
+let temp = null;
+function startWire(ev, nodeId, outIdx){
+  ev.preventDefault(); ev.stopPropagation(); closeRefusal();
+  const from = portPos(nodeId,'out',outIdx);
+  temp = document.createElementNS('http://www.w3.org/2000/svg','path');
+  temp.classList.add('temp'); wiresEl.appendChild(temp);
+  document.querySelectorAll('.port[data-kind="in"]').forEach(p=>p.classList.add('hot'));
+  const mv = e => { const p = cpos(e); temp.setAttribute('d', roundedPath(routePts(from, p))); };
+  const up = e => {
+    window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up);
+    temp.remove(); temp = null;
+    document.querySelectorAll('.port.hot').forEach(p=>p.classList.remove('hot'));
+    const tgt = e.target.closest('.port[data-kind="in"]');
+    if (!tgt) return;
+    const toId = tgt.dataset.node;
+    if (toId === nodeId) { toast('a node cannot feed itself'); return; }
+    const fromT = TYPES[nodes[nodeId].type].outs[outIdx];
+    const toT = TYPES[nodes[toId].type].ins[+tgt.dataset.idx];
+    if (fromT===toT || fromT==='any' || toT==='any' || toT==='void'){
+      edges.push({ id:'e'+(++eid), from:[nodeId, outIdx], to: toId });
+      drawWires(); renderInspector();
+      if (edges.filter(x=>x.to===toId).length>1) toast('join: first branch to settle supplies the frame');
+    } else {
+      refuse(nodeId, outIdx, toId, fromT, toT, cpos(e));
+    }
+  };
+  window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+}
+let refusalEl = null, refusedPathEl = null;
+function refuse(fromN, fromIdx, toN, fromT, toT, at){
+  closeRefusal();
+  refusedPathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+  refusedPathEl.classList.add('refusedw');
+  refusedPathEl.setAttribute('d', roundedPath(routePts(portPos(fromN,'out',fromIdx), portPos(toN,'in',0))));
+  wiresEl.appendChild(refusedPathEl);
+  const fix = FIXES[fromT+'>'+toT];
+  refusalEl = document.createElement('div');
+  refusalEl.className = 'refusal popover';
+  refusalEl.style.left = Math.min(at.x, 1600-290)+'px';
+  refusalEl.style.top  = (at.y+14)+'px';
+  refusalEl.innerHTML = `<div class="rt"><span class="code">${fromT} → ${toT}</span> refused</div>
+    <p>${TYPES[nodes[toN].type].name} reads <code>${toT}</code>.` +
+    (fix ? ` Insert <code>${fix.map(f=>TYPES[f].name).join(' → ')}</code> to make the connection.`
+         : ` These types don’t meet — route through a parse or extract step first.`) + `</p>
+    <div class="acts">` +
+    (fix ? `<button class="btn btn-primary btn-sm" id="rf-fix">Insert ${fix.length>1?'fix nodes':TYPES[fix[0]].name}</button>` : '') +
+    `<button class="btn btn-ghost btn-sm" id="rf-dismiss">Dismiss</button></div>`;
+  canvas.appendChild(refusalEl);
+  refusalEl.querySelector('#rf-dismiss').onclick = closeRefusal;
+  if (fix) refusalEl.querySelector('#rf-fix').onclick = () => {
+    const a = portPos(fromN,'out',fromIdx), b = portPos(toN,'in',0);
+    let prev = fromN, prevIdx = fromIdx;
+    fix.forEach((f,i)=>{
+      const fx = a.x + (b.x-a.x)*(i+1)/(fix.length+1) - 75;
+      const fy = a.y + (b.y-a.y)*(i+1)/(fix.length+1) + 60;
+      const nn = addNode(f, Math.max(10,fx), Math.max(10,fy));
+      edges.push({ id:'e'+(++eid), from:[prev, prevIdx], to: nn.id });
+      prev = nn.id; prevIdx = 0;
+    });
+    edges.push({ id:'e'+(++eid), from:[prev, prevIdx], to: toN });
+    closeRefusal(); drawWires();
+    toast('inserted — every refusal carries its fix');
+  };
+}
+function closeRefusal(){ refusalEl?.remove(); refusalEl=null; refusedPathEl?.remove(); refusedPathEl=null; }
+
+/* ---------- selection + delete ---------- */
+function select(s){
+  sel = s;
+  document.querySelectorAll('.node.sel').forEach(el=>el.classList.remove('sel'));
+  if (s?.kind==='node') nodes[s.id].el.classList.add('sel');
+  drawWires(); renderInspector();
+}
+canvas.addEventListener('mousedown', e => { if (e.target===canvas || e.target===wiresEl) { select(null); closeRefusal(); } });
+window.addEventListener('keydown', e => {
+  if (e.key==='Escape'){ select(null); closeRefusal(); }
+  if ((e.key==='Delete'||e.key==='Backspace') && sel && document.activeElement.tagName!=='INPUT'){
+    e.preventDefault();
+    if (sel.kind==='edge') edges = edges.filter(x=>x.id!==sel.id);
+    if (sel.kind==='node'){ const id=sel.id; edges = edges.filter(x=>x.from[0]!==id && x.to!==id);
+      nodes[id].el.remove(); delete nodes[id]; }
+    sel=null; drawWires(); renderInspector();
+  }
+});
+
+/* ---------- palette ---------- */
+function renderPalette(filter){
+  const tiers = [...document.querySelectorAll('.tier-t')].filter(t=>t.classList.contains('on')).map(t=>+t.dataset.tier);
+  const body = $('#pal-body'); body.innerHTML=''; let synNote='';
+  const cats = {};
+  Object.entries(TYPES).forEach(([k,t])=>{ (cats[t.cat] ||= []).push([k,t]); });
+  Object.entries(cats).forEach(([cat, items])=>{
+    const shown = items.filter(([k,t])=>{
+      if (!tiers.includes(t.tier)) return false;
+      if (!filter) return true;
+      const f = filter.toLowerCase();
+      if (t.name.toLowerCase().includes(f)) return true;
+      if (SYN[f]===k){ synNote = `“${filter}” → ${t.name} — most port-23 AV gear is raw ASCII, not Telnet`; return true; }
+      return false;
+    });
+    if (!shown.length) return;
+    const sect = document.createElement('div'); sect.className='pal-sect';
+    sect.innerHTML = `<span class="lbl">${cat}</span>`;
+    shown.forEach(([k,t])=>{
+      const r = document.createElement('div'); r.className='pal-row'; r.dataset.type=k;
+      r.title = `tier ${t.tier}` + (t.scoped ? ' · lives inside a Connection Scope' : '');
+      r.textContent = t.name;
+      r.addEventListener('mousedown', ev => startPaletteDrag(ev, k));
+      sect.appendChild(r);
+    });
+    body.appendChild(sect);
+  });
+  $('#pal-syn').textContent = synNote || (filter ? (body.children.length? '' : 'nothing — try a synonym, or tier 3') : 'synonyms work — try “telnet”');
+}
+$('#pal-search').addEventListener('input', e => renderPalette(e.target.value.trim()));
+document.querySelectorAll('.tier-t').forEach(t => t.addEventListener('click', ()=>{
+  t.classList.toggle('on'); t.classList.toggle('off'); renderPalette($('#pal-search').value.trim());
+}));
+function startPaletteDrag(ev, type){
+  ev.preventDefault();
+  const ghost = document.createElement('div');
+  ghost.className='node'; ghost.style.position='fixed'; ghost.style.zIndex=50; ghost.style.opacity=.85;
+  ghost.style.pointerEvents='none';
+  ghost.innerHTML = `<div class="nh"><span class="nn">${TYPES[type].name}</span></div><div class="nb">${TYPES[type].body}</div>`;
+  document.body.appendChild(ghost);
+  const mv = e => { ghost.style.left=(e.clientX+8)+'px'; ghost.style.top=(e.clientY+6)+'px'; };
+  mv(ev);
+  const up = e => {
+    window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); ghost.remove();
+    const r = wrap.getBoundingClientRect();
+    if (e.clientX>r.left && e.clientX<r.right && e.clientY>r.top && e.clientY<r.bottom){
+      const p = cpos(e); const n = addNode(type, Math.max(8,p.x-70), Math.max(8,p.y-16));
+      select({kind:'node', id:n.id}); drawWires();
+      toast(TYPES[type].name+' added — wire it up');
+    }
+  };
+  window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+}
+
+/* ---------- inspector ---------- */
+function fieldRow(label, control){ return `<div class="field-row"><span class="fl">${label}</span>${control}</div>`; }
+function inspFor(n){
+  const t = TYPES[n.type];
+  let cfg = '';
+  if (n.type==='expect') cfg =
+    fieldRow('Strategy', `<select class="select"><option>delimiter</option><option>length prefix</option><option>fixed</option><option>regex</option><option>quiet period</option><option>until close</option></select>`) +
+    fieldRow('Delimiter', `<input class="input code" value="\\r">`) +
+    fieldRow('Include delimiter', `<span class="tgl" data-t></span>`) +
+    fieldRow('Strip IAC', `<span class="tgl on" data-t></span>`) +
+    fieldRow('Max bytes', `<input class="input code" value="4096">`) +
+    fieldRow('Discard before', `<select class="select"><option>— none</option><option>marker…</option></select>`) +
+    fieldRow('Timeout', `<select class="select"><option>inherit scope · 5 s</option></select>`);
+  else if (n.type==='tcp_request' || n.type==='http_request') cfg =
+    fieldRow('Host', `<input class="input code" value="{{device.host}}">`) +
+    fieldRow('Port', `<input class="input code" value="4352">`) +
+    fieldRow('TLS', `<span class="tgl" data-t></span>`) +
+    fieldRow('Payload', `<input class="input code" value="%1ERST ?\\r">`) +
+    fieldRow('Read until', `<select class="select"><option>delimiter "\\r"</option><option>quiet 300 ms</option></select>`) +
+    fieldRow('Timeout', `<input class="input code" value="5 s">`);
+  else if (n.type==='threshold') cfg =
+    fieldRow('Warn below', `<input class="input code" value="-75">`) +
+    fieldRow('Critical below', `<input class="input code" value="-85">`) +
+    fieldRow('Hysteresis', `<input class="input code" value="3">`) +
+    fieldRow('Hold for', `<input class="input code" value="2 runs">`);
+  else if (n.type==='regex') cfg =
+    fieldRow('Pattern', `<input class="input code" value="ERST=(?<d>\\d{6})">`) +
+    `<div class="hint" style="font-size:11px;color:var(--muted);line-height:1.45">Live preview runs on the same
+     non-backtracking engine as the runtime — via the API, never a second engine.</div>`;
+  else if (n.type==='coerce') cfg =
+    fieldRow('To', `<select class="select"><option>number</option><option>int</option><option>bool</option><option>timestamp</option></select>`) +
+    fieldRow('Format', `<input class="input code" value="decimal">`) +
+    `<div class="hint" style="font-size:11px;color:var(--muted)">Failures take the on-fail branch — never silent.</div>`;
+  else if (n.type==='emit_status') cfg =
+    fieldRow('Status', `<select class="select"><option>from input</option><option>up</option><option>degraded</option><option>down</option></select>`) +
+    fieldRow('Reason', `<input class="input code" value="{{assert.message}}">`);
+  else cfg = fieldRow('Config', `<input class="input code" value="${n.body.replace(/"/g,'&quot;')}" data-cfg="body">`);
+
+  const ins = t.ins.map((ty,i)=>{ const e=edges.find(x=>x.to===n.id);
+    return `<div class="pr">in<span class="ty">${ty}</span><span class="st">${e?'from '+TYPES[nodes[e.from[0]].type].name:'unconnected'}</span></div>`; }).join('');
+  const outs = t.outs.map((ty,i)=>{ const es=edges.filter(x=>x.from[0]===n.id&&x.from[1]===i);
+    return `<div class="pr">${t.outLabels?.[i]||'out'}<span class="ty">${ty}</span><span class="st">${es.length?('→ '+es.map(e=>TYPES[nodes[e.to].type].name).join(', ')):'unconnected'}</span></div>`; }).join('');
+  return `<div class="insp-head"><div class="nn">${t.name}</div><div class="nid">${n.id} · ${t.cat.toLowerCase()}</div></div>
+    <div class="insp-sect"><span class="lbl">Config</span>${cfg}</div>
+    <div class="insp-sect"><span class="lbl">Publish as</span>${fieldRow('Binding name', `<input class="input code" value="" placeholder="unset">`)}
+      <div class="hint" style="font-size:11px;color:var(--muted);line-height:1.45">Named outputs are readable from any downstream expression.</div></div>
+    <div class="insp-sect"><span class="lbl">Ports</span><div class="portlist">${ins}${outs}
+      <div class="pr">error<span class="ty">error</span><span class="st">unconnected — propagates</span></div></div></div>`;
+}
+function renderInspector(){
+  const insp = $('#inspector');
+  if (sel?.kind==='node' && nodes[sel.id]) insp.innerHTML = inspFor(nodes[sel.id]);
+  else if (sel?.kind==='edge'){ const e = edges.find(x=>x.id===sel.id);
+    insp.innerHTML = `<div class="insp-head"><div class="nn">Connection</div>
+      <div class="nid">${TYPES[nodes[e.from[0]].type].name} → ${TYPES[nodes[e.to].type].name}</div></div>
+      <div class="insp-sect"><span class="lbl">Carries</span>
+      <div class="portlist"><div class="pr">frame<span class="ty">${TYPES[nodes[e.from[0]].type].outs[e.from[1]]}</span><span class="st">immutable · shared on fan-out</span></div></div>
+      <div class="hint" style="font-size:11px;color:var(--muted)">⌫ deletes this wire.</div></div>`; }
+  else insp.innerHTML = `<div class="howto">
+      <span class="lbl">This canvas is live</span>
+      <div class="h-row"><span class="k">drag</span><span>a node by its header — wires re-route</span></div>
+      <div class="h-row"><span class="k">port → port</span><span>drag to connect. Wrong types refuse, and name the fix</span></div>
+      <div class="h-row"><span class="k">click</span><span>a node or wire to inspect it here</span></div>
+      <div class="h-row"><span class="k">⌫</span><span>deletes the selection</span></div>
+      <div class="h-row"><span class="k">palette</span><span>drag a row onto the canvas to add it</span></div>
+      <div class="h-row"><span class="k">▸ run</span><span>paints the draft node by node, then opens the bytes</span></div>
+    </div>`;
+  insp.querySelectorAll('.tgl').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+  insp.querySelectorAll('[data-cfg="body"]').forEach(inp=>inp.addEventListener('input',()=>{
+    const n = nodes[sel.id]; n.body = inp.value; n.el.querySelector('.nb').textContent = inp.value; }));
+}
+
+/* ---------- test run ---------- */
+$('#btn-run').addEventListener('click', ()=>{
+  const order = Object.values(nodes).sort((a,b)=>a.x-b.x || a.y-b.y);
+  $('#run-result').innerHTML = `<span class="mono">running draft on agent av…</span>`;
+  order.forEach(n=>{ n.el.classList.remove('ok','fail'); n.el.querySelector('.st').textContent='';
+    n.el.querySelector('.ms').textContent=''; n.el.querySelector('.fail-msg')?.remove(); });
+  let failed = false;
+  order.forEach((n,i)=>{
+    setTimeout(()=>{
+      const isTransport = ['tcp_request','http_request','expect','send','icmp','snmp'].includes(n.type);
+      const ms = isTransport ? 150+Math.floor(((n.x*7+n.y*3)%80)) : (n.x+n.y)%3;
+      if (n.type==='assert' && !failed){
+        failed = true;
+        n.el.classList.add('fail');
+        n.el.querySelector('.st').innerHTML = '<span class="cross">✕</span>';
+        const fm = document.createElement('div'); fm.className='fail-msg'; fm.textContent='d[3] = 1 · lamp fault';
+        n.el.appendChild(fm);
+      } else {
+        n.el.classList.add('ok');
+        n.el.querySelector('.st').innerHTML = '<span class="tick">✔</span>';
+      }
+      n.el.querySelector('.ms').textContent = ms+' ms';
+      n.w = n.el.offsetWidth; drawWires();
+      if (i===order.length-1){
+        $('#run-result').innerHTML = failed
+          ? `<svg width="9" height="9" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg>
+             <b style="color:var(--down)">down</b> — assertion · <span class="mono">run 412 ms · capture saved</span>`
+          : `<svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg>
+             <b style="color:var(--up)">up</b> · <span class="mono">run 391 ms · capture saved</span>`;
+        setDock(true);                                  // the bytes arrive when there are bytes to show
+      }
+    }, 90*i);
+  });
+});
+
+/* ---------- dock ---------- */
+function setDock(open){ $('#app').classList.toggle('dock-open', open);
+  $('#btn-bytes').textContent = open ? 'Bytes ▴' : 'Bytes ▾'; }
+$('#btn-bytes').addEventListener('click', ()=> setDock(!$('#app').classList.contains('dock-open')));
+
+/* ---------- publish ---------- */
+function computeGates(){
+  const hasEmit = Object.values(nodes).some(n=>n.type==='emit_status');
+  const caps = !Object.values(nodes).some(n=>n.type==='checksum');
+  return [
+    {ok:hasEmit, txt: hasEmit?'Every path reaches Emit Status':'No <b>Emit Status</b> on the canvas — a run that never reaches one is <code>unknown</code>. Add one from Evaluate · Emit.'},
+    {ok:true, txt:'Worst case fits every bound monitor’s interval'},
+    {ok:true, txt:'Metric labels drawn from the declared schema'},
+    {ok:caps, txt: caps?'Every assigned agent declares the required node types':'Agent <b>lx</b> runs <b>Projector — East</b> and does not declare <code>byteops.checksum</code>. Fix: upgrade lx to 0.9.3, or pin Projector — East to v3.'},
+  ];
+}
+$('#btn-publish').addEventListener('click', ()=>{
+  const gates = computeGates();
+  $('#gates').innerHTML = gates.map(g=>`<div class="gate-row ${g.ok?'gok':'gbad'}"><span class="gi">${g.ok?'✔':'✕'}</span><span>${g.txt}</span></div>`).join('');
+  const blocked = gates.some(g=>!g.ok);
+  $('#pub-blocked').textContent = blocked ? 'Blocked — '+gates.filter(g=>!g.ok).length+' gate(s) failing' : '';
+  const go = $('#pub-go'); go.style.opacity = blocked? .35 : 1; go.style.cursor = blocked?'not-allowed':'pointer';
+  go.onclick = blocked ? ()=>toast('fix the failing gate first — it tells you how') : ()=>{ hideModal(); toast('published — tracking monitors update on their next run'); };
+  $('#overlay').style.display='block'; $('#pubmodal').style.display='block';
+});
+function hideModal(){ $('#overlay').style.display='none'; $('#pubmodal').style.display='none'; }
+$('#pub-cancel').addEventListener('click', hideModal);
+$('#overlay').addEventListener('click', hideModal);
+
+/* ---------- zoom + fit ---------- */
+function setScale(s){ scale = Math.min(1.5, Math.max(.4, s));
+  canvas.style.transform = `scale(${scale})`; $('#z-pct').textContent = Math.round(scale*100)+'%'; }
+function fit(){
+  const ns = Object.values(nodes);
+  if (!ns.length) return setScale(1);
+  const pad = 60;
+  const maxX = Math.max(...ns.map(n=>n.x+n.w)) + pad, maxY = Math.max(...ns.map(n=>n.y+n.h)) + pad + 40;
+  setScale(Math.max(0.7, Math.min(1, wrap.clientWidth/maxX, wrap.clientHeight/maxY)));
+  wrap.scrollTo(0,0);
+}
+$('#z-in').onclick = ()=>setScale(scale+.1);
+$('#z-out').onclick = ()=>setScale(scale-.1);
+$('#z-fit').onclick = fit;
+function placeZoom(){ const r = wrap.getBoundingClientRect();
+  const z = $('#zoombar'); z.style.left=(r.left+12)+'px'; z.style.top=(r.bottom-34)+'px'; }
+new ResizeObserver(placeZoom).observe(wrap); placeZoom();
+
+/* ---------- note drag ---------- */
+(function(){ const el = $('#note1');
+  el.addEventListener('mousedown', ev=>{ ev.preventDefault();
+    const start=cpos(ev), ox=el.offsetLeft-start.x, oy=el.offsetTop-start.y;
+    const mv=e=>{ const p=cpos(e); el.style.left=(p.x+ox)+'px'; el.style.top=(p.y+oy)+'px'; };
+    const up=()=>{ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); };
+    window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up); });
+})();
+
+/* ---------- examples ---------- */
+function clearAll(){
+  Object.values(nodes).forEach(n=>n.el.remove());
+  nodes = {}; edges = []; sel = null; closeRefusal(); drawWires();
+}
+function wire(pairs){ pairs.forEach(([a,idx,b])=>edges.push({id:'e'+(++eid), from:[a.id,idx], to:b.id})); }
+const EXAMPLES = {
+  simple(){
+    $('#flowname').textContent = 'Encoder — stream health';
+    $('#scopebox').style.display='none'; $('#note1').style.display='none';
+    const t = addNode('http_request', 80, 150, {body:'GET https://{{device.host}}/stats'});
+    const d = addNode('decode', 390, 150);
+    const r = addNode('regex', 650, 150, {body:'"bitrate":(?<mbps>[\\d.]+)'});
+    const a = addNode('assert', 330, 330, {body:'mbps >= 4 · warn · “bitrate low”'});
+    const e = addNode('emit_status', 650, 330);
+    const th = addNode('threshold', 330, 480);
+    wire([[t,0,d],[d,0,r],[r,0,a],[a,0,e]]);
+    // th left unconnected on purpose: refusal bait sits quietly below
+  },
+  projector(){
+    $('#flowname').textContent = 'Projector — Status + Lamp';
+    $('#scopebox').style.display='block'; $('#note1').style.display='block';
+    const sb = $('#scopebox'); sb.style.left='40px'; sb.style.top='80px'; sb.style.width='800px'; sb.style.height='360px';
+    const nt = $('#note1'); nt.style.left='40px'; nt.style.top='500px';
+    const e1 = addNode('expect', 70, 160, {body:'until "\\r" · discard banner'});
+    const r1 = addNode('regex', 330, 160, {body:'^HELLO (?<auth>\\d)( (?<nonce>\\w+))?'});
+    const f1 = addNode('iff', 620, 160, {body:'auth == 1 → true'});
+    const ck = addNode('checksum', 70, 330, {body:'md5( {{nonce}} + secret(pj_pass) )'});
+    const sd = addNode('send', 380, 330, {body:'{{hash?}}%1ERST ?\\r'});
+    const e2 = addNode('expect', 630, 330, {body:'until "\\r" · strip IAC'});
+    const dc = addNode('decode', 940, 160);
+    const r2 = addNode('regex', 940, 300, {body:'ERST=(?<d>\\d{6}) → record'});
+    const as = addNode('assert', 940, 440);
+    const es = addNode('emit_status', 940, 580);
+    wire([[e1,0,r1],[r1,0,f1],[f1,0,ck],[f1,1,sd],[ck,0,sd],[sd,0,e2],[e2,0,dc],[dc,0,r2],[r2,0,as],[as,0,es]]);
+  },
+};
+function loadExample(name){
+  clearAll(); EXAMPLES[name](); drawWires(); renderInspector(); fit();
+}
+$('#example').addEventListener('change', e => loadExample(e.target.value));
+
+renderPalette('');
+loadExample('simple');
+</script>
+</body>
+</html>

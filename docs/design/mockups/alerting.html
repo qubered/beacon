@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Alerting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+
+  .content { display: grid; grid-template-columns: 1fr 400px; min-height: calc(100vh - 73px); }
+  .col-main { border-right: 1px solid var(--hairline); min-width: 0; }
+  .rail { min-width: 0; }
+  .rail-sect { border-bottom: 1px solid var(--hairline); }
+  .pad-sect { padding: 12px 16px 14px; }
+  .route-note { padding: 10px 16px 14px; font-size: 11.5px; color: var(--muted); line-height: 1.55; max-width: 72ch; }
+  .route-note b { color: var(--sub); }
+  .chan { display: flex; gap: 10px; align-items: center; height: 34px; padding: 0 16px; border-bottom: 1px solid var(--hairline); font-size: 12.5px; color: var(--sub); }
+  .chan .code { font-family: var(--font-mono); font-size: 11px; }
+  .chan b { color: var(--ink); font-weight: 550; }
+  .chan .meta { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+  .sil { padding: 10px 16px; border-bottom: 1px solid var(--hairline); font-size: 12px; color: var(--sub); line-height: 1.5; }
+  .sil b { color: var(--ink); font-weight: 550; }
+  .sil .meta { color: var(--muted); font-size: 11px; }
+  .sil .exp { font-family: var(--font-mono); font-size: 10.5px; color: var(--warn); }
+
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Alerting</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+<div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html" class="active"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="col-main">
+        <div class="sect"><span class="lbl">Routing — error class decides who wakes up</span></div>
+        <table class="data">
+          <thead><tr><th>Error class</th><th>Meaning</th><th>Severity</th><th>Route</th></tr></thead>
+          <tbody>
+            <tr><td class="code">timeout · connect_refused · dns</td><td>device unreachable</td><td><span class="badge badge-err">critical</span></td><td class="dev">#av-oncall</td></tr>
+            <tr><td class="code">assertion</td><td>device answered, value out of range — the real signal</td><td><span class="badge badge-err">critical</span></td><td class="dev">#av-oncall</td></tr>
+            <tr><td class="code">protocol</td><td><b style="color:var(--ink)">device answered, we misread it</b> — flow or firmware</td><td><span class="badge badge-warn">warning</span></td><td class="dev">flow author</td></tr>
+            <tr><td class="code">tls · auth</td><td>credential or certificate — predictable in advance</td><td><span class="badge badge-warn">warning</span></td><td class="dev">admin</td></tr>
+            <tr><td class="code">agent_unreachable</td><td>the eyes went dark — one alert, not sixty</td><td><span class="badge badge-err">critical</span></td><td class="dev">admin</td></tr>
+            <tr><td class="code">sandbox · internal</td><td>Beacon’s own fault</td><td><span class="badge badge-warn">warning</span></td><td class="dev">admin</td></tr>
+          </tbody>
+        </table>
+        <p class="route-note">Twelve monitors going <b>protocol</b> after a firmware update is a different
+        message from twelve going <b>timeout</b> — the first is a flow fix at a desk, the second is a
+        page. Debounce everywhere: <b>3 consecutive failures and 60 s dwell</b>, both required.
+        Grouped by site and parent · escalate unacked after 15 m · repeat 4 h.</p>
+
+        <div class="sect"><span class="lbl">Channels</span><span class="spacer"></span><button class="btn btn-ghost btn-sm">Add channel</button></div>
+        <div class="chan"><b>#av-oncall</b><span class="code">webhook → chat</span><span class="meta">grouped · wait 30 s · interval 5 m</span></div>
+        <div class="chan"><b>#av-managers</b><span class="code">webhook → chat</span><span class="meta">escalation target only</span></div>
+        <div class="chan"><b>admin</b><span class="code">smtp</span><span class="meta">daily digest + critical</span></div>
+        <div class="chan"><b>noc-forward</b><span class="code">webhook → alert manager</span><span class="meta">mirror, no state</span></div>
+      </div>
+
+      <div class="rail">
+        <div class="rail-sect">
+          <div class="sect"><span class="lbl">Active silences</span><span class="spacer"></span><span class="statline dim mono" style="font-size:10.5px">expiry required · max 24 h</span></div>
+          <div class="sil"><b>Wireless RX 03</b> · RF floor <span class="meta">— jt: “antenna swap in progress”</span><br><span class="exp">expires 19:10 · in 28 m</span></div>
+          <div class="sil"><b>Camera PTZ 3</b> · bitrate <span class="meta">— sam: “encoder retune tonight”</span><br><span class="exp">expires 23:30</span></div>
+          <div class="pad-sect" style="font-size:11px;color:var(--muted)">Weekly digest lists every silence. Permanent silences don’t exist here.</div>
+        </div>
+
+        <div class="rail-sect">
+          <div class="sect"><span class="lbl">Maintenance windows</span></div>
+          <div class="sil"><b>Amp rack B</b> — Wednesdays 22:00–23:00 <span class="meta">· Australia/Sydney</span><br><span class="meta">collection continues · notifications held · uptime reported both ways</span></div>
+        </div>
+
+        <div class="rail-sect" style="border-bottom:none">
+          <div class="sect"><span class="lbl">Show mode</span><span class="spacer"></span><span class="badge badge-warn">active tonight</span></div>
+          <div class="sil"><b>Main Hall</b> · 19:30–23:00 · device group <b>Stage</b><br>
+          <span class="meta">non-critical muted · stage gear polled 2× faster · wall focuses the group</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Monitor Detail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .content { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 73px); }
+  .col-main { border-right: 1px solid var(--hairline); min-width: 0; }
+
+  .mon-head { padding: 16px 20px 0; }
+  .mon-head .row1 { display: flex; align-items: center; gap: 12px; }
+  .mon-head h1 { font-size: 16px; font-weight: 600; letter-spacing: .01em; }
+  .mon-head .crumb { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .mon-head .crumb a { color: var(--muted); } .mon-head .crumb a:hover { color: var(--signal); }
+  .mon-head .acts { margin-left: auto; display: flex; gap: 8px; }
+  .meta-line { display: flex; gap: 6px; align-items: baseline; padding: 8px 0 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .meta-line b { color: var(--sub); font-weight: 500; }
+  .meta-line .mono { font-size: 11px; }
+  .meta-line .sep { color: var(--faint); margin: 0 6px; }
+
+  .kpis { display: flex; align-items: baseline; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+  .kpi { display: flex; align-items: baseline; gap: 7px; }
+  .kpi .lbl { font-size: 9.5px; }
+  .kpi b { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi .sub2 { font-size: 11px; color: var(--muted); }
+  .kpi b.warn2 { color: var(--warn); }
+  .kpis .sep { color: var(--faint); margin: 0 10px; }
+
+  .sect2 { padding: 14px 20px 18px; border-bottom: 1px solid var(--hairline); }
+  .sect2 .sh { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .sect2 .sh .spacer { flex: 1; }
+  .sect2 .sh .mono { font-size: 11px; color: var(--muted); }
+  .range { display: flex; gap: 2px; }
+  .range span { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--edge); border-radius: 2px; cursor: pointer; }
+  .range span.on { color: var(--ink); background: var(--bg2); }
+
+  .strip-foot { display: flex; justify-content: space-between; margin-top: 7px; font-family: var(--font-mono); font-size: 10px; color: var(--faint); }
+
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .chart .ch { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .chart .ch .spacer { flex: 1; }
+  .chart .ch .val { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
+  .chart .ch .val em { font-style: normal; color: var(--muted); font-size: 10.5px; }
+
+  table.data td.st-cell { width: 110px; }
+  .transition { font-family: var(--font-mono); font-size: 9.5px; color: var(--down); border: 1px solid color-mix(in oklab, var(--down) 35%, transparent); padding: 1px 5px; border-radius: 2px; margin-left: 7px; }
+  tr.sel-row td { background: var(--bg2) !important; }
+
+  /* run inspector rail */
+  .rail { min-width: 0; }
+  .rail-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--hairline); }
+  .rail-head .t { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .rail-head .mono { display: block; margin-top: 3px; font-size: 10.5px; color: var(--muted); }
+  .nodelist { border-bottom: 1px solid var(--hairline); }
+  .nrow { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 16px; font-size: 12px; color: var(--sub); }
+  .nrow:hover { background: var(--bg-hover); }
+  .nrow .ic { width: 11px; text-align: center; font-size: 10px; }
+  .nrow .ok2 { color: var(--up); } .nrow .bad2 { color: var(--down); } .nrow .skip2 { color: var(--faint); }
+  .nrow .ms { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .nrow .sz { font-family: var(--font-mono); font-size: 10px; color: var(--faint); width: 44px; text-align: right; }
+  .nrow.sel { background: var(--bg2); color: var(--ink); }
+  .nrow.failn { color: var(--down); }
+  .rail-sect { padding: 12px 16px 14px; border-bottom: 1px solid var(--hairline); }
+  .rail-sect .lbl { display: block; margin-bottom: 8px; }
+  .hrow { display: flex; gap: 12px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.9; white-space: pre; }
+  .hrow .off { color: var(--faint); } .hrow .hx { color: var(--sub); } .hrow .asc { color: var(--muted); }
+  .hx .hl { background: color-mix(in oklab, var(--down) 30%, transparent); color: var(--ink); border-radius: 2px; }
+  .asc .hl { color: var(--down); }
+  .rail-sect .why { font-size: 11.5px; color: var(--sub); line-height: 1.55; }
+  .rail-sect .why code { font-family: var(--font-mono); font-size: 10.5px; color: var(--down); }
+  .rail-sect .open-full { margin-top: 9px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Monitors</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html" class="active"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+  <div class="main">
+    <div class="content">
+      <div class="col-main">
+
+        <div class="mon-head">
+          <div class="crumb"><a href="devices.html">Devices</a> / <a href="#">Wireless RX 07</a></div>
+          <div class="row1">
+            <h1>Channel health</h1>
+            <span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span>
+            <span class="badge badge-warn">flap 38%</span>
+            <div class="acts">
+              <button class="btn btn-secondary btn-sm">Run now</button>
+              <button class="btn btn-secondary btn-sm">Silence 1 h…</button>
+              <button class="btn btn-ghost btn-sm">Edit flow →</button>
+            </div>
+          </div>
+          <div class="meta-line">
+            flow <b>Wireless RX — Channel Health</b> <span class="mono">v7 · tracking latest</span>
+            <span class="sep">·</span>agent <b>av</b>
+            <span class="sep">·</span>polled every <span class="mono">30 s</span>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <span class="kpi"><span class="lbl">Uptime 90 d</span><b>99.62%</b><span class="sub2">excl. maint</span></span>
+          <span class="kpi"><b style="color:var(--sub);font-size:12px">99.41%</b><span class="sub2">raw</span></span>
+          <span class="sep">·</span>
+          <span class="kpi"><span class="lbl">Flap</span><b class="warn2">38%</b><span class="sub2">high &gt; 30 · low 20</span></span>
+          <span class="sep">·</span>
+          <span class="kpi"><span class="lbl">Last run</span><b>12 s</b><span class="sub2">ago · 341 ms</span></span>
+          <span class="sep">·</span>
+          <span class="kpi"><span class="lbl">Next</span><b>:18 s</b><span class="sub2">slot 18:42:24</span></span>
+        </div>
+
+        <div class="sect2">
+          <div class="sh">
+            <span class="lbl">State — 90 days</span>
+            <span class="mono">each segment = 1 day · worst state shown</span>
+            <span class="spacer"></span>
+            <div class="range"><span>24 h</span><span>7 d</span><span class="on">90 d</span><span>1 y</span></div>
+          </div>
+          <div class="strip">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="u"></i><i class="u"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="m"></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i>
+          </div>
+          <div class="strip-foot"><span>JUN 05</span><span>JUL 20</span><span>SEP 03</span></div>
+        </div>
+
+        <div class="sect2">
+          <div class="charts">
+            <div class="chart">
+              <div class="ch"><span class="lbl">RF level — ch 07</span><span class="spacer"></span><span class="val">-61 dBm <em>warn -75 · crit -85</em></span></div>
+              <svg viewBox="0 0 460 120" width="100%" style="display:block">
+                <line x1="0" y1="30" x2="460" y2="30" stroke="var(--hairline)"/>
+                <line x1="0" y1="60" x2="460" y2="60" stroke="var(--hairline)"/>
+                <line x1="0" y1="90" x2="460" y2="90" stroke="var(--hairline)"/>
+                <rect x="0" y="86" width="460" height="16" fill="var(--warn)" opacity="0.09"/>
+                <rect x="0" y="102" width="460" height="18" fill="var(--down)" opacity="0.09"/>
+                <line x1="0" y1="86" x2="460" y2="86" stroke="var(--warn)" stroke-dasharray="3 3" opacity=".5"/>
+                <line x1="0" y1="102" x2="460" y2="102" stroke="var(--down)" stroke-dasharray="3 3" opacity=".5"/>
+                <polyline fill="none" stroke="#3987e5" stroke-width="1.8" stroke-linejoin="round"
+                  points="0,46 25,44 50,49 75,42 100,45 125,40 150,48 175,43 200,51 225,47 250,56 275,62 300,54 325,68 350,75 365,88 380,78 400,66 420,58 440,50 460,48"/>
+                <circle cx="365" cy="88" r="3" fill="#3987e5" stroke="var(--bg0)" stroke-width="1.5"/>
+                <text x="330" y="114" font-family="IBM Plex Mono" font-size="9" fill="var(--warn)">-78 dBm · 18:31</text>
+              </svg>
+            </div>
+            <div class="chart">
+              <div class="ch"><span class="lbl">Battery runtime — ch 07</span><span class="spacer"></span><span class="val">6.2 h <em>crit &lt; 1 h</em></span></div>
+              <svg viewBox="0 0 460 120" width="100%" style="display:block">
+                <line x1="0" y1="30" x2="460" y2="30" stroke="var(--hairline)"/>
+                <line x1="0" y1="60" x2="460" y2="60" stroke="var(--hairline)"/>
+                <line x1="0" y1="90" x2="460" y2="90" stroke="var(--hairline)"/>
+                <rect x="0" y="104" width="460" height="16" fill="var(--down)" opacity="0.09"/>
+                <line x1="0" y1="104" x2="460" y2="104" stroke="var(--down)" stroke-dasharray="3 3" opacity=".5"/>
+                <polyline fill="none" stroke="#199e70" stroke-width="1.8" stroke-linejoin="round"
+                  points="0,20 40,22 80,26 120,30 160,35 200,40 240,46 280,52 300,24 340,28 380,33 420,38 460,42"/>
+                <text x="285" y="16" font-family="IBM Plex Mono" font-size="9" fill="var(--muted)">battery swap</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="sect">
+          <span class="lbl">Run history</span>
+          <span class="statline dim mono" style="font-size:11px">341 runs today · 2 failed · 3 throttled</span>
+          <span class="spacer"></span>
+          <div class="range"><span class="on">Today</span><span>7 d</span><span>Custom…</span></div>
+        </div>
+        <table class="data">
+          <thead><tr><th>Slot</th><th>State</th><th class="num">Duration</th><th>Outcome</th><th>Reason</th><th class="num">Capture</th></tr></thead>
+          <tbody>
+            <tr><td class="code">18:42:24</td><td class="st-cell"><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="num">341 ms</td><td class="code">ok</td><td>—</td><td class="num"><a href="#">last 10</a></td></tr>
+            <tr class="sel-row"><td class="code">18:41:54</td><td class="st-cell"><span class="state st-degraded"><svg class="glyph" viewBox="0 0 10 10"><path d="M5 .8 9.6 9.2H.4Z" fill="var(--warn)"/></svg><span class="stl">Degraded</span></span><span class="transition">TRANSITION</span></td><td class="num">352 ms</td><td class="code">assertion</td><td>RF ch07 -78 dBm &lt; warn -75</td><td class="num"><a href="#">open</a></td></tr>
+            <tr><td class="code">18:41:24</td><td class="st-cell"><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="num">339 ms</td><td class="code">ok</td><td>—</td><td class="num"><a href="#">suspect win</a></td></tr>
+            <tr><td class="code">18:40:54</td><td class="st-cell"><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="num">344 ms</td><td class="code">ok</td><td>—</td><td class="num">—</td></tr>
+            <tr><td class="code">18:40:24</td><td class="st-cell"><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="stl">Throttled</span></span></td><td class="num">—</td><td class="code">throttled</td><td>device bucket exhausted — 2 monitors share RX 07</td><td class="num">—</td></tr>
+            <tr><td class="code">18:39:54</td><td class="st-cell"><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="num">347 ms</td><td class="code">ok</td><td>—</td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <!-- run inspector -->
+      <div class="rail">
+        <div class="rail-head">
+          <span class="t">Run — 18:41:54</span>
+          <span class="mono">flow v7 · agent av · attempt 1 of 2 · 352 ms total</span>
+        </div>
+        <div class="nodelist">
+          <div class="nrow"><span class="ic ok2">✔</span>Connection Scope<span class="sz">—</span><span class="ms">201 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>&nbsp;&nbsp;Send — state request<span class="sz">18 B</span><span class="ms">2 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>&nbsp;&nbsp;Expect — until "&gt;"<span class="sz">214 B</span><span class="ms">182 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Split Frames<span class="sz">6</span><span class="ms">1 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Decode ascii<span class="sz">214 B</span><span class="ms">0 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Regex Extract<span class="sz">rec</span><span class="ms">1 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Scale &amp; Offset −128<span class="sz">num</span><span class="ms">0 ms</span></div>
+          <div class="nrow sel failn"><span class="ic bad2">✕</span>Threshold — RF floor<span class="sz">num</span><span class="ms">0 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Emit Metric ×6<span class="sz">6</span><span class="ms">1 ms</span></div>
+          <div class="nrow"><span class="ic ok2">✔</span>Emit Status<span class="sz">st</span><span class="ms">0 ms</span></div>
+        </div>
+        <div class="rail-sect">
+          <span class="lbl">Why it failed</span>
+          <p class="why">Threshold <code>-78 &lt; -75</code> entered the warn band and held
+          for 2 of the required 3 runs. Value came from raw <code>0x32</code> scaled ×1, offset −128.</p>
+        </div>
+        <div class="rail-sect">
+          <span class="lbl">Input — frame 3 of 6</span>
+          <div class="hrow"><span class="off">0000</span><span class="hx">3C 20 52 45 50 20 31 20</span><span class="asc">&lt; REP 1 </span></div>
+          <div class="hrow"><span class="off">0008</span><span class="hx">52 46 5F 4C 56 4C 20 <span class="hl">32</span></span><span class="asc">RF_LVL <span class="hl">2</span></span></div>
+          <div class="hrow"><span class="off">0010</span><span class="hx">3E 0D</span><span class="asc">&gt;.</span></div>
+          <a class="open-full" href="#" style="display:block">Open full capture in byte inspector →</a>
+        </div>
+        <div class="rail-sect">
+          <span class="lbl">Context</span>
+          <p class="why" style="color:var(--muted)">device <span style="color:var(--sub)">Wireless RX 07</span> · vars <span class="mono" style="font-size:10px">channels=6, offset=-128</span> · previous run <span class="mono" style="font-size:10px">-72 dBm</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+</body>
+</html>

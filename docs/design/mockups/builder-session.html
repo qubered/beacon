@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Builder · Session mode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .app { display: grid; grid-template-rows: 46px 1fr 292px 27px; height: 100vh; }
+  .work { display: grid; grid-template-columns: 184px 184px 1fr 260px; min-height: 0; }
+
+  /* ---------- top bar ---------- */
+  .back { color: var(--muted); font-size: 14px; }
+  .draft-badge {
+    font-family: var(--font-mono); font-size: 10px; color: var(--warn);
+    border: 1px solid color-mix(in oklab, var(--warn) 40%, transparent);
+    padding: 2px 7px; border-radius: var(--r-badge); letter-spacing: .04em;
+  }
+  .gate { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .gate b { color: var(--sub); font-weight: 500; }
+  .gate .ok { color: var(--up); }
+
+  /* ---------- palette ---------- */
+  .palette { border-right: 1px solid var(--hairline); overflow-y: auto; padding-bottom: 20px; }
+  .palette .search-wrap { padding: 12px 12px 4px; }
+  .palette .input { width: 100%; }
+  .palette .syn { padding: 5px 14px 0; font-size: 10.5px; color: var(--faint); }
+  .palette .tiers { display: flex; align-items: center; gap: 8px; padding: 10px 14px 4px; }
+  .tier-t {
+    font-family: var(--font-mono); font-size: 10px; padding: 2px 7px;
+    border: 1px solid var(--edge); border-radius: var(--r-badge); color: var(--sub); cursor: pointer;
+  }
+  .tier-t.on { background: var(--bg2); color: var(--ink); border-color: var(--edge-strong); }
+  .tier-t.off { color: var(--faint); border-style: dashed; }
+  .pal-sect { margin-top: 14px; }
+  .pal-sect .lbl { display: block; padding: 0 14px 4px; font-size: 9.5px; }
+  .pal-row {
+    display: flex; align-items: center; height: 26px; padding: 0 14px;
+    font-size: 12px; color: var(--sub); cursor: grab;
+  }
+  .pal-row:hover { background: var(--bg-hover); color: var(--ink); }
+  .pal-row .t { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--faint); }
+  .pal-row .scope-tag { margin-left: 6px; font-family: var(--font-mono); font-size: 9px; color: var(--faint); }
+  .pal-more { padding: 12px 14px 0; font-size: 11px; }
+
+  /* ---------- canvas ---------- */
+  .canvas-wrap { position: relative; overflow: auto; background: var(--bg0); }
+  .canvas {
+    position: relative; width: 884px; height: 600px;
+    background-image: radial-gradient(var(--faint) 0.8px, transparent 0.8px);
+    background-size: 22px 22px; background-position: 11px 11px;
+  }
+  svg.wires { position: absolute; inset: 0; pointer-events: none; }
+  svg.wires path { fill: none; stroke: #52534E; stroke-width: 1.5; }
+  svg.wires path.refused { stroke: var(--down); stroke-dasharray: 5 4; opacity: .8; }
+
+  .scope {
+    position: absolute; border: 1px dashed var(--edge-strong); border-radius: 6px;
+    background: rgba(233, 231, 225, 0.02);
+  }
+  .scope .sc-head {
+    position: absolute; top: -1px; left: -1px; display: flex; gap: 8px; align-items: center;
+    background: var(--bg0); border: 1px solid var(--edge-strong); border-radius: 6px 0 4px 0;
+    padding: 4px 10px;
+  }
+  .sc-head .lbl { font-size: 9px; color: var(--sub); }
+  .sc-head .cfg { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+  .node {
+    position: absolute; background: var(--bg1); border: 1px solid var(--edge-strong);
+    border-radius: 4px; min-width: 150px;
+  }
+  .node .nh { display: flex; align-items: center; gap: 6px; padding: 5px 9px 2px; }
+  .node .nn { font-size: 12px; font-weight: 550; color: var(--ink); }
+  .node .ms { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); padding-left: 10px; }
+  .node .nb {
+    padding: 0 9px 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+  }
+  .node .nt { position: absolute; top: -14px; left: 1px; font-family: var(--font-ui);
+    font-variation-settings: "wdth" 75; font-size: 8.5px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint); }
+  .node.ok { border-left: 2px solid var(--up); }
+  .node.fail { border-left: 2px solid var(--down); background: color-mix(in oklab, var(--down) 4%, var(--bg1)); }
+  .node.ghost { opacity: .55; }
+  .node.sel { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
+  .tick { color: var(--up); font-size: 10px; line-height: 1; }
+  .cross { color: var(--down); font-size: 10px; line-height: 1; }
+  .fail-msg { padding: 0 9px 6px; font-family: var(--font-mono); font-size: 10px; color: var(--down); }
+
+  .port { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--bg0);
+    border: 1.5px solid #5F5D55; }
+  .port.filled { background: #5F5D55; }
+  .port.err { border-color: #7A4744; width: 7px; height: 7px; }
+  .port.sig { border-color: var(--signal); }
+  .port.bad { border-color: var(--down); }
+
+  .note {
+    position: absolute; border: 1px dashed var(--edge-strong); border-radius: 4px;
+    padding: 8px 11px 9px; max-width: 400px; background: var(--bg0);
+  }
+  .note .lbl { font-size: 8.5px; display: block; margin-bottom: 3px; }
+  .note p { font-size: 11px; line-height: 1.5; color: var(--sub); }
+  .note p code { font-family: var(--font-mono); font-size: 10px; color: var(--ink); }
+
+  .refusal { position: absolute; width: 264px; padding: 10px 12px 11px; }
+  .refusal .rt { display: flex; gap: 7px; align-items: baseline; font-size: 12px; font-weight: 600; color: var(--ink); }
+  .refusal .rt .code { font-family: var(--font-mono); font-size: 11px; color: var(--down); }
+  .refusal p { font-size: 11.5px; color: var(--sub); line-height: 1.5; margin: 5px 0 9px; }
+  .refusal p code { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink); }
+  .refusal .acts { display: flex; gap: 8px; }
+
+  .zoombar { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 2px; align-items: center;
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+    background: var(--bg1); border: 1px solid var(--edge); border-radius: 3px; padding: 3px 8px; }
+
+  /* ---------- inspector ---------- */
+  .inspector { border-left: 1px solid var(--hairline); overflow-y: auto; }
+  .insp-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--hairline); }
+  .insp-head .nn { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .insp-head .nid { font-family: var(--font-mono); font-size: 10px; color: var(--faint); margin-top: 2px; }
+  .insp-sect { padding: 12px 14px 14px; border-bottom: 1px solid var(--hairline); display: grid; gap: 10px; }
+  .insp-sect > .lbl { font-size: 9.5px; }
+  .field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .field-row .fl { font-size: 12px; color: var(--sub); }
+  .field-row .select, .field-row .input { width: 132px; height: 26px; font-size: 11.5px; }
+  .tgl { width: 26px; height: 15px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--edge-strong); position: relative; flex: none; }
+  .tgl i { position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .tgl.on { background: color-mix(in oklab, var(--signal) 30%, var(--bg3)); border-color: var(--signal); }
+  .tgl.on i { left: auto; right: 2px; background: var(--signal-strong); }
+  .portlist { display: grid; gap: 6px; }
+  .portlist .pr { display: flex; gap: 8px; align-items: center; font-size: 11.5px; color: var(--sub); }
+  .portlist .pr .ty { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--bg2); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--edge); }
+  .portlist .pr .st { margin-left: auto; font-size: 10.5px; color: var(--faint); }
+
+  /* ---------- dock: test run + byte inspector ---------- */
+  .dock { border-top: 1px solid var(--edge); background: var(--bg0); display: grid; grid-template-rows: 44px 1fr; min-height: 0; }
+  .runbar { display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--hairline); }
+  .runbar .select { width: 260px; font-family: var(--font-mono); font-size: 11.5px; }
+  .runbar .result { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); }
+  .runbar .result .glyph { width: 9px; height: 9px; }
+  .runbar .result b { color: var(--down); font-weight: 600; }
+  .runbar .result .mono { font-size: 11px; color: var(--muted); }
+
+  .hexes { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  .hexpane { padding: 10px 16px 12px; overflow: auto; }
+  .hexpane + .hexpane { border-left: 1px solid var(--hairline); }
+  .hex-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .hex-head .lbl { font-size: 9.5px; }
+  .hex-head .meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .hex-head .spacer { flex: 1; }
+  .copyas { display: flex; gap: 4px; }
+  .copyas span { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); border: 1px solid var(--edge); padding: 1px 6px; border-radius: 2px; cursor: pointer; }
+  .copyas span:hover { color: var(--ink); background: var(--bg2); }
+
+  .hrow { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; line-height: 1.9; white-space: pre; }
+  .hrow .off { color: var(--faint); }
+  .hrow .hx { color: var(--sub); }
+  .hrow .asc { color: var(--muted); }
+  .hx .hl { background: color-mix(in oklab, var(--down) 30%, transparent); color: var(--ink); border-radius: 2px; padding: 1px 0; }
+  .asc .hl { color: var(--down); }
+  .hx .dlm { border-bottom: 2px solid var(--signal); }
+  .asc .dlm { color: var(--signal); }
+  .msk {
+    background: repeating-linear-gradient(45deg, rgba(210,95,90,.13) 0 4px, transparent 4px 8px);
+    border: 1px solid rgba(210,95,90,.28); border-radius: 2px; color: var(--down); padding: 0 2px;
+  }
+  .hexfoot { margin-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .hexfoot .k { color: var(--faint); }
+  .sealed-note { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 11px; color: var(--sub); }
+  .sealed-note .lock { color: var(--down); font-size: 10px; }
+  .sealed-note code { font-family: var(--font-mono); font-size: 10px; color: var(--ink); }
+
+  .scope.sel { border-color: var(--signal); }
+  .lane { position: absolute; border: 1px dashed var(--edge); border-radius: 4px; }
+  .lane .ll { position: absolute; top: -7px; left: 10px; background: var(--bg0); padding: 0 6px;
+    font-family: var(--font-ui); font-variation-settings: "wdth" 78; font-size: 9px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .statebox { position: absolute; border: 1px dashed var(--edge-strong); border-radius: 4px;
+    background: var(--bg0); padding: 8px 11px 9px; }
+  .statebox .lbl { font-size: 8.5px; display: block; margin-bottom: 5px; }
+  .statebox .kv { font-family: var(--font-mono); font-size: 10px; color: var(--sub); line-height: 1.8; white-space: pre; }
+  .statebox .kv .k { color: var(--muted); }
+  .statebox p { font-size: 10.5px; color: var(--muted); line-height: 1.5; margin-top: 5px; }
+  .mode-chips { display: flex; gap: 6px; }
+  .mode-chips .tier-t { font-size: 10.5px; padding: 3px 9px; }
+  .app.backdrop > * { opacity: .35; filter: saturate(.7); pointer-events: none; }
+  .overlay { position: fixed; inset: 0; background: rgba(10,10,9,.45); }
+  .choice { position: fixed; left: 50%; top: 150px; transform: translateX(-50%); width: 540px;
+    background: var(--bg1); border: 1px solid var(--edge-strong); border-radius: 6px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); padding: 16px 18px 14px; }
+  .choice .q { font-size: 14px; font-weight: 600; color: var(--ink); margin: 8px 0 4px; }
+  .choice .why { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
+  .opt { display: flex; gap: 11px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 4px;
+    margin-bottom: 7px; cursor: pointer; }
+  .opt .radio { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; margin-top: 2px; }
+  .opt.on { border-color: var(--signal); background: var(--signal-dim); }
+  .opt.on .radio { border-color: var(--signal); box-shadow: inset 0 0 0 3px var(--bg1); background: var(--signal); }
+  .opt .ot { font-size: 12.5px; color: var(--ink); font-weight: 550; }
+  .opt .oh { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+  .choice .foot { display: flex; gap: 10px; margin-top: 12px; }
+  .choice .foot .spacer { flex: 1; }
+</style>
+</head>
+<body>
+<div class="app backdrop">
+
+  <!-- ======== top bar ======== -->
+  <div class="topbar">
+    <span class="mark" style="width:auto">BEACON</span>
+    <span class="crumb"><span style="color:var(--muted)">Flows</span><span class="sep">/</span><b>Wireless RX — Channel Health</b></span>
+    <span class="draft-badge">DRAFT · from v7 · session</span>
+    <span class="spacer"></span>
+    <span class="gate">handler budget <b>38 ms</b> of 250 ms <span class="ok">✓</span></span>
+    <a href="#" style="font-size:12.5px">Semantic diff</a>
+    <button class="btn btn-ghost">Discard draft</button>
+    <button class="btn btn-primary">Publish v8</button>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+
+  <div class="work">
+    <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html" class="active"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+
+    <!-- ======== palette ======== -->
+    <div class="palette">
+      <div class="search-wrap"><input class="input" placeholder="Search nodes…"></div>
+      <div class="syn">synonyms work — try “telnet”, “port 23”</div>
+      <div class="tiers">
+        <span class="lbl" style="font-size:9px">Tier</span>
+        <span class="tier-t on">1</span><span class="tier-t on">2</span><span class="tier-t off">3</span>
+      </div>
+
+      <div class="pal-sect"><span class="lbl">Transport</span>
+        <div class="pal-row">TCP Request<span class="t">1</span></div>
+        <div class="pal-row">HTTP Request<span class="t">1</span></div>
+        <div class="pal-row">ICMP Ping<span class="t">1</span></div>
+        <div class="pal-row">Connection Scope<span class="t">2</span></div>
+        <div class="pal-row">Send<span class="scope-tag">· scope</span><span class="t">2</span></div>
+        <div class="pal-row">Expect<span class="scope-tag">· scope</span><span class="t">2</span></div>
+        <div class="pal-row">SNMP<span class="t">2</span></div>
+      </div>
+      <div class="pal-sect"><span class="lbl">Bytes</span>
+        <div class="pal-row">Decode<span class="t">1</span></div>
+        <div class="pal-row">Build Bytes<span class="t">2</span></div>
+        <div class="pal-row">Checksum<span class="t">2</span></div>
+        <div class="pal-row">Split Frames<span class="t">2</span></div>
+      </div>
+      <div class="pal-sect"><span class="lbl">Parse</span>
+        <div class="pal-row">Regex Extract<span class="t">1</span></div>
+        <div class="pal-row">Parse<span class="t">1</span></div>
+        <div class="pal-row">Coerce<span class="t">1</span></div>
+        <div class="pal-row">Table Select<span class="t">2</span></div>
+      </div>
+      <div class="pal-sect"><span class="lbl">Transform</span>
+        <div class="pal-row">Scale &amp; Offset<span class="t">1</span></div>
+        <div class="pal-row">Lookup Table<span class="t">1</span></div>
+        <div class="pal-row">Delta / Rate<span class="t">2</span></div>
+        <div class="pal-row">Expression<span class="t">2</span></div>
+      </div>
+      <div class="pal-sect"><span class="lbl">Control</span>
+        <div class="pal-row">If<span class="t">1</span></div>
+        <div class="pal-row">Switch<span class="t">2</span></div>
+        <div class="pal-row">ForEach<span class="t">2</span></div>
+        <div class="pal-row">Call Flow<span class="t">2</span></div>
+        <div class="pal-row">Note<span class="t">1</span></div>
+      </div>
+      <div class="pal-sect"><span class="lbl">Evaluate · Emit</span>
+        <div class="pal-row">Assert<span class="t">1</span></div>
+        <div class="pal-row">Threshold<span class="t">1</span></div>
+        <div class="pal-row">Emit Status<span class="t">1</span></div>
+        <div class="pal-row">Emit Metric<span class="t">1</span></div>
+      </div>
+      <div class="pal-more"><a href="#">27 more in tier 3 — show</a></div>
+    </div>
+
+    <!-- ======== canvas ======== -->
+    <div class="canvas-wrap">
+      <div class="canvas">
+        <svg class="wires" width="884" height="600">
+          <path d="M226,160 L262,160"/>
+          <path d="M190,274 L220,274"/>
+          <path d="M410,274 L440,274"/>
+          <path d="M600,266 L616,266 Q630,266 630,280 L630,316 Q630,330 616,330 L226,330 Q212,330 212,344 L212,366 Q212,374 218,374 L220,374"/>
+          <path d="M600,280 L610,280 Q624,280 624,294 L624,340 Q624,354 610,354 L448,354 Q436,354 436,362 L436,368 Q436,374 442,374"/>
+          <path d="M400,374 L412,374 Q426,374 426,388 L426,416 Q426,430 412,430 L310,430 Q296,430 296,438 L296,442 Q296,449 302,449"/>
+          <path d="M610,374 L622,374 Q636,374 636,388 L636,416 Q636,430 622,430 L310,430 Q296,430 296,438 L296,442 Q296,449 302,449"/>
+        </svg>
+
+        <div class="scope sel" style="left:24px; top:64px; width:628px; height:420px;">
+          <div class="sc-head">
+            <span class="lbl">Connection Scope</span>
+            <span class="cfg">tcp {{device.host}}:2202 · session — body runs per inbound frame</span>
+          </div>
+        </div>
+
+        <div class="lane" style="left:40px; top:112px; width:400px; height:82px;">
+          <span class="ll">On open — after every (re)connect</span>
+        </div>
+        <div class="node ok" style="left:56px; top:136px; width:170px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Send</span><span class="ms">16:28</span></div>
+          <div class="nb">&lt; SET 0 METER_RATE 100 &gt;</div>
+          <i class="port filled" style="right:-5px; top:20px;"></i>
+        </div>
+        <div class="node ok" style="left:262px; top:136px; width:160px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Send</span><span class="ms">16:28</span></div>
+          <div class="nb">&lt; GET 0 ALL &gt;</div>
+          <i class="port filled" style="left:-5px; top:20px;"></i>
+        </div>
+
+        <div class="node ok" style="left:40px; top:250px; width:150px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Decode</span><span class="ms">0 ms</span></div>
+          <div class="nb">ascii · strict</div>
+          <i class="port filled" style="left:-5px; top:20px;" title="inbound frame"></i>
+          <i class="port filled" style="right:-5px; top:20px;"></i>
+          <i class="port err" style="bottom:-4px; left:50%;"></i>
+        </div>
+        <div class="node ok" style="left:220px; top:250px; width:190px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Regex Extract</span><span class="ms">1 ms</span></div>
+          <div class="nb">REP (?&lt;ch&gt;\d) (?&lt;prop&gt;\w+) (?&lt;val&gt;\S+)</div>
+          <i class="port filled" style="left:-5px; top:20px;"></i>
+          <i class="port filled" style="right:-5px; top:20px;"></i>
+          <i class="port err" style="bottom:-4px; left:50%;"></i>
+        </div>
+        <div class="node ok" style="left:440px; top:250px; width:160px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Switch</span><span class="ms">0 ms</span></div>
+          <div class="nb">on prop</div>
+          <i class="port filled" style="left:-5px; top:20px;"></i>
+          <i class="port filled" style="right:-5px; top:12px;" title="RF_LVL"></i>
+          <i class="port filled" style="right:-5px; top:26px;" title="BATT_RUN_TIME"></i>
+          <i class="port err" style="bottom:-4px; left:50%;"></i>
+        </div>
+
+        <div class="node ok" style="left:220px; top:350px; width:180px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Scale &amp; Offset</span><span class="ms">0 ms</span></div>
+          <div class="nb">val − 128 → dBm</div>
+          <i class="port filled" style="left:-5px; top:20px;"></i>
+          <i class="port filled" style="right:-5px; top:20px;"></i>
+        </div>
+        <div class="node ok" style="left:440px; top:350px; width:170px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Lookup Table</span><span class="ms">0 ms</span></div>
+          <div class="nb">minutes → hours · 38 rows</div>
+          <i class="port filled" style="left:-5px; top:20px;"></i>
+          <i class="port filled" style="right:-5px; top:20px;"></i>
+        </div>
+
+        <div class="node ok" style="left:300px; top:425px; width:230px;">
+          <div class="nh"><span class="tick">✔</span><span class="nn">Set State</span><span class="ms">0 ms</span></div>
+          <div class="nb">subscription · {{prop}}.ch{{ch}}</div>
+          <i class="port filled" style="left:-5px; top:20px;" title="join: first branch to settle"></i>
+        </div>
+
+        <div class="statebox" style="left:688px; top:250px; width:176px;">
+          <span class="lbl">Subscription state — live</span>
+          <div class="kv"><span class="k">rf.ch1</span>    −58 dBm
+<span class="k">rf.ch2</span>    −64 dBm
+<span class="k">batt.ch1</span>  6.2 h
+<span class="k">batt.ch2</span>  4.3 h</div>
+          <p>TTL 10 min — keys the device stops sending age out.</p>
+        </div>
+
+        <div class="statebox" style="left:688px; top:398px; width:176px;">
+          <span class="lbl">Read by</span>
+          <p style="margin-top:0; color:var(--sub)">Derived monitors on their own schedule — same alerts, same uptime.</p>
+          <p><a href="monitor.html">RX 07 · Channel health →</a></p>
+        </div>
+
+        <div class="zoombar"><span>−</span><span style="padding:0 6px">100%</span><span>+</span><span style="padding-left:10px">fit</span></div>
+      </div>
+    </div>
+
+    <!-- ======== inspector ======== -->
+    <div class="inspector">
+      <div class="insp-head">
+        <div class="nn">Connection Scope</div>
+        <div class="nid">scope_1 · session mode</div>
+      </div>
+
+      <div class="insp-sect">
+        <span class="lbl">Mode</span>
+        <div class="mode-chips"><span class="tier-t">transient</span><span class="tier-t">pooled</span><span class="tier-t on">session</span></div>
+        <div class="hint" style="font-size:11px; color:var(--muted); line-height:1.45">
+          Same body, different binding: the flow runs on every inbound frame instead of a schedule.
+        </div>
+      </div>
+
+      <div class="insp-sect">
+        <span class="lbl">Liveness</span>
+        <div class="field-row"><span class="fl">Source heartbeat</span><span class="tgl on"><i></i></span></div>
+        <div class="field-row"><span class="fl">Window</span><input class="input code" value="90 s"></div>
+        <div class="field-row"><span class="fl">Keepalive poke</span><select class="select"><option>— none needed</option></select></div>
+        <div class="hint" style="font-size:11px; color:var(--muted); line-height:1.45">
+          Silent past the window ⇒ treated exactly like a poll that stopped answering.
+        </div>
+      </div>
+
+      <div class="insp-sect">
+        <span class="lbl">Connection</span>
+        <div class="portlist">
+          <div class="pr">state<span class="ty">open</span><span class="st">2 h 14 m · 1 reconnect</span></div>
+          <div class="pr">on open<span class="ty">2 nodes</span><span class="st">re-runs each reconnect</span></div>
+          <div class="pr">backpressure<span class="ty">50 f/s</span><span class="st">drops counted: 0</span></div>
+        </div>
+      </div>
+
+      <div class="insp-sect">
+        <span class="lbl">Writes</span>
+        <div class="portlist">
+          <div class="pr">rf.ch{{ch}}<span class="ty">number</span><span class="st">subscription</span></div>
+          <div class="pr">batt.ch{{ch}}<span class="ty">number</span><span class="st">subscription</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== dock ======== -->
+  <div class="dock">
+    <div class="runbar">
+      <span class="lbl">Session</span>
+      <select class="select"><option>Wireless RX 07 · 10.20.4.31 · agent av</option></select>
+      <span class="result"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg>
+        <b style="color:var(--up)">live</b> — <span class="mono">connected 2 h 14 m · 41 frames/min · drops 0 · last frame 2 s</span></span>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn btn-secondary">Replay fixture</button>
+      <button class="btn btn-ghost">Disconnect</button>
+    </div>
+
+    <div class="hexes">
+      <div class="hexpane">
+        <div class="hex-head">
+          <span class="lbl">Latest frame · in</span>
+          <span class="meta">21 B · 18:42:05 · frame 8 231 this session</span>
+          <span class="spacer"></span>
+          <div class="copyas"><span>hex</span><span>ascii</span></div>
+        </div>
+        <div class="hrow"><span class="off">00000000</span><span class="hx">3C 20 52 45 50 20 31 20  52 46 5F 4C 56 4C 20 30</span><span class="asc">&lt; REP 1 RF_LVL 0</span></div>
+        <div class="hrow"><span class="off">00000010</span><span class="hx">37 30 20 3E <span class="dlm">0D</span></span><span class="asc">70 &gt;<span class="dlm">·</span></span></div>
+      </div>
+
+      <div class="hexpane">
+        <div class="hex-head">
+          <span class="lbl">Handler → state</span>
+          <span class="meta">2 ms · within 250 ms budget</span>
+        </div>
+        <div class="hrow"><span class="off">write</span><span class="hx">rf.ch1 ← −58 dBm   <span style="color:var(--faint)">(raw 070 − 128)</span></span></div>
+        <div class="hrow"><span class="off">prev </span><span class="hx" style="color:var(--faint)">rf.ch1 = −57 dBm · 18:42:03</span></div>
+        <div class="hexfoot">no capture stored per frame — captures sample 1/min in session mode</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+<div class="overlay"></div>
+<div class="choice">
+  <span class="lbl">Before this session goes live</span>
+  <p class="q">How will Beacon know this receiver is alive?</p>
+  <p class="why">A source that only speaks on change sits silent, trips its liveness window, and pages
+  someone for nothing. Every session source declares one of these.</p>
+  <div class="opt on">
+    <span class="radio"></span>
+    <span><span class="ot">It streams — metering frames arrive continuously</span>
+    <span class="oh" style="display:block">Liveness window 90 s. Doc says METER frames every 100 ms once enabled.</span></span>
+  </div>
+  <div class="opt">
+    <span class="radio"></span>
+    <span><span class="ot">Beacon sends a keepalive poke</span>
+    <span class="oh" style="display:block">A harmless query on an interval you set; the reply is the heartbeat.</span></span>
+  </div>
+  <div class="opt">
+    <span class="radio"></span>
+    <span><span class="ot">Don’t hold a session — poll it instead</span>
+    <span class="oh" style="display:block">Right answer for devices that only answer when asked.</span></span>
+  </div>
+  <div class="foot">
+    <span class="spacer"></span>
+    <button class="btn btn-ghost">Cancel</button>
+    <button class="btn btn-primary">Continue</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon — Command Palette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beacon.css?v=3">
+<style>
+  .backdrop { opacity: .30; pointer-events: none; filter: saturate(.7); }
+  .overlay { position: fixed; inset: 0; background: rgba(10,10,9,.45); }
+
+  .cmdk {
+    position: fixed; left: 50%; top: 110px; transform: translateX(-50%);
+    width: 580px; background: var(--bg1); border: 1px solid var(--edge-strong);
+    border-radius: 6px; box-shadow: 0 18px 60px rgba(0,0,0,.55); overflow: hidden;
+  }
+  .cmdk .qrow { display: flex; align-items: center; gap: 10px; padding: 12px 15px;
+    border-bottom: 1px solid var(--hairline); }
+  .cmdk .qrow .q { font-size: 14px; color: var(--ink); }
+  .cmdk .qrow .caret { display:inline-block; width:1px; height: 16px; background: var(--signal); }
+  .cmdk .qrow .hint { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--faint); }
+
+  .cmdk .sect-lbl { padding: 10px 15px 4px; }
+  .crow { position: relative; display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 15px;
+    font-size: 12.5px; color: var(--sub); cursor: pointer; }
+  .crow:hover { background: var(--bg-hover); }
+  .crow.sel { background: var(--bg2); color: var(--ink); }
+  .crow.sel::before { content:""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; background: var(--signal); }
+  .crow svg.ic { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.3;
+    stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+  .crow .glyph { width: 8px; height: 8px; flex: none; }
+  .crow b { color: var(--ink); font-weight: 550; }
+  .crow b mark { background: none; color: var(--signal); }
+  .crow .ctx { color: var(--muted); font-size: 11.5px; }
+  .crow .kbd { margin-left: auto; }
+  .crow .kbd + .kbd { margin-left: 4px; }
+
+  .cmdk .foot { display: flex; align-items: center; gap: 14px; padding: 8px 15px;
+    border-top: 1px solid var(--hairline); font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .cmdk .foot .spacer { flex: 1; }
+
+  /* minimal backdrop table */
+  .bk-toolbar { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+</style>
+</head>
+<body>
+<div class="frame backdrop">
+  <div class="topbar">
+    <span class="mark">BEACON</span>
+    <span class="crumb"><b>Main Hall</b><span class="sep">/</span>Devices</span>
+    <span class="spacer"></span>
+    <span class="search-chip">Search <span class="kbd">⌘K</span></span>
+    <span class="clock">18:42:07</span>
+  </div>
+  <div class="nav">
+    <span class="lbl nav-sect">Observe</span>
+    <a href="dashboard.html"><svg viewBox="0 0 16 16"><path d="M2.5 9.8a5.5 5.5 0 0 1 11 0"/><line x1="8" y1="9.8" x2="10.6" y2="7.2"/><line x1="2.5" y1="12.5" x2="13.5" y2="12.5"/></svg>Dashboard</a>
+    <a href="wall.html"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="5" height="4.5"/><rect x="9" y="2.5" width="5" height="4.5"/><rect x="2" y="9" width="5" height="4.5"/><rect x="9" y="9" width="5" height="4.5"/></svg>Status wall</a>
+    <a href="incidents.html"><svg viewBox="0 0 16 16"><path d="M8 2.6 14 13.2H2Z"/><line x1="8" y1="6.6" x2="8" y2="9.4"/><line x1="8" y1="11.2" x2="8" y2="11.3"/></svg>Incidents<span class="n">2</span></a>
+    <a href="devices.html" class="active"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>Devices</a>
+    <a href="monitors.html"><svg viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>Monitors</a>
+    <span class="lbl nav-sect">Build</span>
+    <a href="flows.html"><svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>Flows</a>
+    <a href="packs.html"><svg viewBox="0 0 16 16"><path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z"/><path d="M2.4 5 8 8l5.6-3"/><line x1="8" y1="8" x2="8" y2="14"/></svg>Packs</a>
+    <a href="discovery.html"><svg viewBox="0 0 16 16"><path d="M2.5 8.6a5.5 5.5 0 0 1 11 0"/><path d="M5.2 8.6a2.8 2.8 0 0 1 5.6 0"/><line x1="8" y1="8.6" x2="8" y2="13"/></svg>Discovery</a>
+    <span class="lbl nav-sect">Platform</span>
+    <a href="agents.html"><svg viewBox="0 0 16 16"><circle cx="8" cy="10.6" r="1.3"/><line x1="8" y1="11.9" x2="8" y2="14"/><path d="M4.9 7.5a4.4 4.4 0 0 1 6.2 0"/><path d="M3 5.4a7 7 0 0 1 10 0"/></svg>Agents</a>
+    <a href="alerting.html"><svg viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><path d="M6.8 13.6a1.3 1.3 0 0 0 2.4 0"/></svg>Alerting</a>
+    <a href="settings.html"><svg viewBox="0 0 16 16"><line x1="2.5" y1="4.2" x2="13.5" y2="4.2"/><circle cx="6" cy="4.2" r="1.5"/><line x1="2.5" y1="8" x2="13.5" y2="8"/><circle cx="10.4" cy="8" r="1.5"/><line x1="2.5" y1="11.8" x2="13.5" y2="11.8"/><circle cx="5.2" cy="11.8" r="1.5"/></svg>Settings</a>
+  </div>
+  <div class="main">
+    <div class="bk-toolbar">
+      <input class="input" placeholder="Filter devices…" style="width:200px">
+      <select class="select"><option>State: any</option></select>
+    </div>
+    <table class="data">
+      <thead><tr><th>Device</th><th>State</th><th>Address</th><th>Agent</th></tr></thead>
+      <tbody>
+        <tr><td class="dev">Stage Switch A</td><td><span class="state st-down"><svg class="glyph" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg><span class="stl">Down</span></span></td><td class="code">10.20.0.11</td><td class="code">av</td></tr>
+        <tr><td class="dev">Wireless RX 07</td><td><span class="state st-unknown"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2.4 1.8"/></svg><span class="stl">Unknown</span></span></td><td class="code">10.20.4.31</td><td class="code">av</td></tr>
+        <tr><td class="dev">DSP Core</td><td><span class="state st-suspect"><svg class="glyph" viewBox="0 0 10 10"><rect x="1.2" y="1.2" width="7.6" height="7.6" fill="none" stroke="var(--down)" stroke-width="1.5"/></svg><span class="stl">Suspect</span></span></td><td class="code">10.20.2.8</td><td class="code">av</td></tr>
+        <tr><td class="dev">Projector — Main</td><td><span class="state st-up"><svg class="glyph" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="var(--up)"/></svg><span class="stl">Up</span></span></td><td class="code">10.20.5.12</td><td class="code">av</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="statusbar">
+    <span><b>118</b>/124 up · <span class="bad3">2 down</span> · <span class="warn4">1 suspect</span> · 3 unknown</span>
+    <span>agents <b>4/4</b> linked</span>
+    <span>spool <b>0</b></span>
+    <span class="warn4">SHOW MODE 19:30–23:00</span>
+    <span class="spacer"></span>
+    <span>last result <b>2 s</b> ago</span>
+  </div>
+</div>
+
+<div class="overlay"></div>
+
+<div class="cmdk">
+  <div class="qrow"><span class="q">rx 07</span><span class="caret"></span><span class="hint">esc to close</span></div>
+
+  <span class="lbl sect-lbl">Go to</span>
+  <div class="crow sel">
+    <svg class="ic" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="4.5" y1="5" x2="6.5" y2="5"/><line x1="4.5" y1="10.2" x2="6.5" y2="10.2"/></svg>
+    <b>Wireless <mark>RX 07</mark></b><span class="ctx">device · Stage West · unknown — suppressed by Stage Switch A</span>
+    <span class="kbd">↵</span>
+  </div>
+  <div class="crow">
+    <svg class="ic" viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>
+    <b>Channel health</b><span class="ctx">monitor on Wireless RX 07 · up · every 30 s</span>
+  </div>
+  <div class="crow">
+    <svg class="ic" viewBox="0 0 16 16"><path d="M1.5 8.5H5L6.5 4l3 7.5L11 8.5h3.5"/></svg>
+    <b>Battery runtime</b><span class="ctx">monitor on Wireless RX 07 · up</span>
+  </div>
+
+  <span class="lbl sect-lbl">Actions — Wireless RX 07</span>
+  <div class="crow">
+    <svg class="ic" viewBox="0 0 16 16"><path d="M3.8 11.8h8.4c-.9-1-1.4-1.9-1.4-4.2a2.8 2.8 0 1 0-5.6 0c0 2.3-.5 3.2-1.4 4.2Z"/><line x1="3" y1="3" x2="13" y2="13"/></svg>
+    <b>Silence for 1 hour…</b><span class="ctx">requires reason + expiry</span>
+    <span class="kbd">s</span>
+  </div>
+  <div class="crow">
+    <svg class="ic" viewBox="0 0 16 16"><path d="M5 3.5 12 8l-7 4.5Z"/></svg>
+    <b>Run monitors now</b><span class="ctx">2 monitors</span>
+    <span class="kbd">r</span>
+  </div>
+  <div class="crow">
+    <svg class="ic" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="5" height="4.2" rx="1"/><rect x="9.5" y="9.3" width="5" height="4.2" rx="1"/><path d="M6.5 4.6h5a.8.8 0 0 1 .8.8v4"/></svg>
+    <b>Edit flow — Wireless RX — Channel Health</b><span class="ctx">v7 · opens builder</span>
+  </div>
+
+  <span class="lbl sect-lbl">Recent</span>
+  <div class="crow">
+    <span class="glyph"><svg viewBox="0 0 10 10" width="8" height="8"><rect x="1" y="1" width="8" height="8" fill="var(--down)"/></svg></span>
+    <b>INC-0219 — Stage Switch A</b><span class="ctx">incident · open · 4 m</span>
+  </div>
+
+  <div class="foot">
+    <span>↑↓ move</span><span>↵ open</span><span>tab section</span>
+    <span class="spacer"></span>
+    <span>g d devices · g i incidents · g w wall</span>
+    <span>? shortcuts</span>
+  </div>
+</div>
+</body>
+</html>
